@@ -13,7 +13,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.HandleFunc("/", s.HelloWorldHandler)
 
-	r.HandleFunc("/health", s.healthHandler)
+	r.HandleFunc("/health", s.mongoHealthHandler)
 
 	return r
 }
@@ -30,8 +30,8 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
-func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	jsonResp, err := json.Marshal(s.db.Health())
+func (s *Server) mongoHealthHandler(w http.ResponseWriter, r *http.Request) {
+	jsonResp, err := json.Marshal(s.mongo.Health())
 
 	if err != nil {
 		log.Fatalf("error handling JSON marshal. Err: %v", err)

@@ -15,15 +15,14 @@ import (
 type Server struct {
 	port int
 
-	db database.Service
+	mongo database.Service
 }
 
 func NewServer() *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	NewServer := &Server{
 		port: port,
-
-		db: database.New(),
+		mongo: database.New(),
 	}
 
 	// Declare Server config

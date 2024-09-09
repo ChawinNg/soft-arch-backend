@@ -48,6 +48,6 @@ func (s *service) Health() map[string]string {
 	}
 
 	return map[string]string{
-		"message": "It's healthy",
+		"message": "Mongo is healthy",
 	}
 }
