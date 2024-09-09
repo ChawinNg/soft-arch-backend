@@ -13,7 +13,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.HandleFunc("/", s.HelloWorldHandler)
 
-	r.HandleFunc("/health", s.mongoHealthHandler)
+	r.HandleFunc("/health/mongodb", s.mongoHealthHandler)
 
 	return r
 }
