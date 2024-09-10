@@ -1,20 +1,43 @@
 package main
 
 import (
-	"backend/internal/server"
-	"fmt"
+	"context"
+	"log"
 	"os"
-	"strconv"
+
+	"backend/internal/core/users"
+
+	"github.com/gofiber/fiber/v2"
+	_ "github.com/joho/godotenv/autoload"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
 
-	server := server.New()
+	// Initialize Fiber
+	app := fiber.New()
 
-	server.RegisterFiberRoutes()
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	err := server.Listen(fmt.Sprintf(":%d", port))
+	//Connect to Database
+
+	database := os.Getenv("DB_DATABASE")
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(database))
+
 	if err != nil {
-		panic(fmt.Sprintf("cannot start server: %s", err))
+		log.Fatal(err)
+
 	}
+
+	db := client.Database("reg_dealer")
+
+	// Initialize User service and handler
+	userService := users.NewUserService(db)
+	userHandler := users.NewUserHandler(userService)
+
+	// Define route
+	app.Get("/users/:id", userHandler.GetUser)
+
+	// Start the server
+	log.Fatal(app.Listen(":8080"))
+
 }

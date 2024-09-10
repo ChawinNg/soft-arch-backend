@@ -2,10 +2,8 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
-	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,11 +11,10 @@ import (
 )
 
 type Service interface {
-	Health() map[string]string
 }
 
 type service struct {
-	db *mongo.Client
+	db *mongo.Database
 }
 
 var (
@@ -34,20 +31,24 @@ func New() Service {
 
 	}
 	return &service{
-		db: client,
+		db: client.Database("reg_dealer"),
 	}
 }
 
-func (s *service) Health() map[string]string {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
+// func (s *service) Health() map[string]string {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+// 	defer cancel()
 
-	err := s.db.Ping(ctx, nil)
-	if err != nil {
-		log.Fatalf(fmt.Sprintf("db down: %v", err))
-	}
+// 	err := s.db.Ping(ctx, nil)
+// 	if err != nil {
+// 		log.Fatalf(fmt.Sprintf("db down: %v", err))
+// 	}
 
-	return map[string]string{
-		"message": "Mongo is healthy",
-	}
-}
+// 	return map[string]string{
+// 		"message": "Mongo is healthy",
+// 	}
+// }
+
+// func (s *service) getDatabase() mongo.Database {
+// 	return *s.db.Database("reg_dealer")
+// }
