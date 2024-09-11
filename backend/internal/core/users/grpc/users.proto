@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package users;
+
+option go_package = "internal/genproto/users;users";
+
+// Define the User message
+message User {
+    string id = 1;
+    string name = 2;
+    string surname = 3;
+    string email = 4;
+    string password = 5;
+}
+
+// Define the request message to get a user by ID
+message GetAllUserRequest {}
+
+// Define the response message for returning a user
+message GetAllUserResponse {
+    repeated User user = 1;
+}
+
+message CreateUserRequest {
+    User user = 1;
+}
+
+message CreateUserResponse {
+    string id = 1;
+}
+
+// Define the User service
+service UserService {
+    rpc GetAllUser (GetAllUserRequest) returns (GetAllUserResponse);
+    rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
+}

@@ -12,6 +12,10 @@ require (
 require (
 	github.com/gofiber/utils v0.0.10 // indirect
 	github.com/gorilla/schema v1.1.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117 // indirect
+	google.golang.org/grpc v1.66.1 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 )
 
 require (
