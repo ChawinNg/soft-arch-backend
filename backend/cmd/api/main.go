@@ -42,7 +42,8 @@ func main() {
 	defer dbSQL.Close()
 	
 	database.DB = dbSQL
-	courseHandler := courses.NewCourseHandler()
+	courseService := courses.NewCourseService(dbSQL)
+	courseHandler := courses.NewCourseHandler(courseService)
 
 	// Define route
 	app.Get("/users/:id", userHandler.GetUser)
