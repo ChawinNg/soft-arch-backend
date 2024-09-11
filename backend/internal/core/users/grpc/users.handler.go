@@ -2,13 +2,14 @@ package users
 
 import (
 	"context"
+	"errors"
 
 	"backend/internal/genproto/users"
+	"backend/internal/model"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/mgo.v2/bson"
-
-	"backend/internal/model"
 )
 
 type Handler struct {
@@ -22,24 +23,51 @@ func NewHandler(db *mongo.Database) *Handler {
 	}
 }
 
-func (h *Handler) GetAllUsers(c context.Context, _ *users.GetAllUserRequest) (*users.GetAllUserResponse, error) {
+func (h *Handler) GetUser(c context.Context, user_id *users.GetUserRequest) (*users.GetUserResponse, error) {
+	id, err := primitive.ObjectIDFromHex(user_id.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	var user model.User
+	err2 := h.db.FindOne(c, bson.M{"_id": id}).Decode(&user)
+	if err2 == mongo.ErrNoDocuments {
+		return nil, errors.New("user not found")
+	}
+
+	grpcUser, err := model.ConvertMongoToGrpc(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &users.GetUserResponse{
+		User: grpcUser,
+	}, nil
+}
+
+func (h *Handler) GetAllUser(c context.Context, _ *users.GetAllUserRequest) (*users.GetAllUserResponse, error) {
 	cursor, err := h.db.Find(c, bson.M{})
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(c)
 
-	var users []model.User
+	var users_set []*users.User
 	for cursor.Next(c) {
 		var user model.User
 		if err := cursor.Decode(&user); err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+
+		grpcUser, err := model.ConvertMongoToGrpc(user)
+
+		if err != nil {
+			return nil, err
+		}
+		users_set = append(users_set, grpcUser)
 	}
 
-	// res := users.GetAllUserResponse{}
-	return nil, nil
+	return &users.GetAllUserResponse{User: users_set}, nil
 }
 
 func (h *Handler) CreateUser(c context.Context, u *users.CreateUserRequest) (*users.CreateUserResponse, error) {

@@ -23,6 +23,7 @@ func main() {
 
 	userConn := userService.NewUserServiceClient(conn)
 	userHandler := user.NewHandler(userConn)
+	r.Get("/users/:id", userHandler.GetUser)
 	r.Get("/users", userHandler.GetAllUsers)
 	r.Post("/users", userHandler.CreateUser)
 

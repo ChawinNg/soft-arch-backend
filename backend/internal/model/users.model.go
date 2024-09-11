@@ -2,6 +2,7 @@ package model
 
 import (
 	"backend/internal/genproto/users"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -15,16 +16,27 @@ type User struct {
 	Password string             `bson:"password"`
 }
 
-func FromServiceModel(u *users.User) User {
-	return User{
-		Name:  u.Name,
-		Email: u.Email,
-	}
+func ConvertMongoToGrpc(user User) (*users.User, error) {
+	id := user.ID.Hex() // Convert ObjectID to hex string
+	return &users.User{
+		Id:       id,
+		Name:     user.Name,
+		Surname:  user.Surname,
+		Email:    user.Email,
+		Password: user.Password,
+	}, nil
 }
 
-func (u User) ToServiceModel() *users.User {
-	return &users.User{
-		Name:  u.Name,
-		Email: u.Email,
+func ConvertGrpcToMongo(user *users.User) (*User, error) {
+	objectID, err := primitive.ObjectIDFromHex(user.Id) // Convert string back to ObjectID
+	if err != nil {
+		return nil, errors.New("invalid ObjectID format")
 	}
+	return &User{
+		ID:       objectID,
+		Name:     user.Name,
+		Surname:  user.Surname,
+		Email:    user.Email,
+		Password: user.Password,
+	}, nil
 }

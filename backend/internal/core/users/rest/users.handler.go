@@ -3,6 +3,7 @@ package users
 import (
 	"backend/internal/genproto/users"
 	"backend/internal/model"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,6 +16,15 @@ func NewHandler(service users.UserServiceClient) *Handler {
 	return &Handler{
 		service: service,
 	}
+}
+
+func (h *Handler) GetUser(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	user, err := h.service.GetUser(c.Context(), &users.GetUserRequest{Id: idParam})
+	if err != nil {
+		return c.Status(http.StatusNotFound).SendString("User not found")
+	}
+	return c.JSON(user)
 }
 
 func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
@@ -34,12 +44,10 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 	}
 
 	_, err = h.service.CreateUser(c.Context(), &users.CreateUserRequest{
-		User: &users.User{
-			Name:     u.Name,
-			Surname:  u.Surname,
-			Email:    u.Email,
-			Password: u.Password,
-		},
+		Name:     u.Name,
+		Surname:  u.Surname,
+		Email:    u.Email,
+		Password: u.Password,
 	})
 	if err != nil {
 		return c.Status(500).SendString(err.Error())
@@ -47,3 +55,22 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 
 	return c.SendStatus(201)
 }
+
+// func (h *Handler) UpdateUser(c *fiber.Ctx) error{
+// 	u := &model.User{}
+// 	err := c.BodyParser(u)
+// 	if err != nil {
+// 		return c.Status(500).SendString(err.Error())
+// 	}
+// 	_, err = h.service.CreateUser(c.Context(), &users.CreateUserRequest{
+// 		Name:     u.Name,
+// 		Surname:  u.Surname,
+// 		Email:    u.Email,
+// 		Password: u.Password,
+// 	})
+// 	if err != nil {
+// 		return c.Status(500).SendString(err.Error())
+// 	}
+
+// 	return c.SendStatus(201)
+// }
