@@ -12,6 +12,8 @@ build:
 # Run the application
 run:
 	@go run cmd/api/main.go
+	@go run cmd/gateway/main.go
+	@go run cmd/users/main.go
 
 
 # Create DB container

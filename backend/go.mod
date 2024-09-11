@@ -12,6 +12,10 @@ require (
 require (
 	github.com/gofiber/utils v0.0.10 // indirect
 	github.com/gorilla/schema v1.1.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117 // indirect
+	google.golang.org/grpc v1.66.1 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 )
 
 require (
@@ -43,6 +47,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-sqlite3 v1.14.23
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
@@ -77,4 +82,5 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
+	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )
