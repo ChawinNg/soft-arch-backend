@@ -13,17 +13,17 @@ type Handler struct {
 
 func NewHandler(service users.UserServiceClient) *Handler {
 	return &Handler{
-		service,
+		service: service,
 	}
 }
 
 func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
-	// users, err := h.service.GetAllUser(c.Context(), nil)
-	// if err != nil {
-	// 	return c.Status(500).SendString(err.Error())
-	// }
+	users, err := h.service.GetAllUser(c.Context(), nil)
+	if err != nil {
+		return c.Status(500).SendString(err.Error())
+	}
 
-	return c.JSON("hello")
+	return c.JSON(users)
 }
 
 func (h *Handler) CreateUser(c *fiber.Ctx) error {
@@ -34,7 +34,12 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 	}
 
 	_, err = h.service.CreateUser(c.Context(), &users.CreateUserRequest{
-		User: u.ToServiceModel(),
+		User: &users.User{
+			Name:     u.Name,
+			Surname:  u.Surname,
+			Email:    u.Email,
+			Password: u.Password,
+		},
 	})
 	if err != nil {
 		return c.Status(500).SendString(err.Error())

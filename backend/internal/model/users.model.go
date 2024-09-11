@@ -12,7 +12,7 @@ type User struct {
 	Name     string             `bson:"name"`
 	Surname  string             `bson:"surname"`
 	Email    string             `bson:"email"`
-	Password int                `bson:"password"`
+	Password string             `bson:"password"`
 }
 
 func FromServiceModel(u *users.User) User {

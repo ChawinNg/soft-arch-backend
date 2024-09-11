@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	conn, err := grpc.NewClient("9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("localhost:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}

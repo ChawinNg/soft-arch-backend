@@ -4,27 +4,45 @@ import (
 	"context"
 
 	"backend/internal/genproto/users"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"gopkg.in/mgo.v2/bson"
+
+	"backend/internal/model"
 )
 
 type Handler struct {
 	users.UnimplementedUserServiceServer
-	// db *mongo.Database
+	db *mongo.Collection
 }
 
-func NewHandler() *Handler {
+func NewHandler(db *mongo.Database) *Handler {
 	return &Handler{
-		// db:db,
+		db: db.Collection("users"),
 	}
 }
 
 func (h *Handler) GetAllUsers(c context.Context, _ *users.GetAllUserRequest) (*users.GetAllUserResponse, error) {
-	res := &users.GetAllUserResponse{
-		User: make([]*users.User, 0),
+	cursor, err := h.db.Find(c, bson.M{})
+	if err != nil {
+		return nil, err
 	}
-	return res, nil
+	defer cursor.Close(c)
+
+	var users []model.User
+	for cursor.Next(c) {
+		var user model.User
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	// res := users.GetAllUserResponse{}
+	return nil, nil
 }
 
 func (h *Handler) CreateUser(c context.Context, u *users.CreateUserRequest) (*users.CreateUserResponse, error) {
-
-	return nil, nil
+	_, err := h.db.InsertOne(c, u)
+	return nil, err
 }

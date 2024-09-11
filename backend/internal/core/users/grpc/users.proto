@@ -6,7 +6,7 @@ option go_package = "internal/genproto/users;users";
 
 // Define the User message
 message User {
-    string id = 1;
+    string _id = 1;
     string name = 2;
     string surname = 3;
     string email = 4;

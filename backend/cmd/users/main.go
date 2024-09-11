@@ -1,9 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net"
+	"os"
 
+	_ "github.com/joho/godotenv/autoload"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -15,7 +22,17 @@ func main() {
 	grpcServer := grpc.NewServer()
 	reflection.Register(grpcServer)
 
-	userHandler := users.NewHandler()
+	database := os.Getenv("DB_DATABASE")
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(database))
+
+	if err != nil {
+		log.Fatal(err)
+
+	}
+
+	db := client.Database("reg_dealer")
+
+	userHandler := users.NewHandler(db)
 
 	userService.RegisterUserServiceServer(grpcServer, userHandler)
 
