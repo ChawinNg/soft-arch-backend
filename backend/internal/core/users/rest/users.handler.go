@@ -40,7 +40,7 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 	u := &model.User{}
 	err := c.BodyParser(u)
 	if err != nil {
-		return c.Status(500).SendString(err.Error())
+		return c.Status(500).SendString("Invalid input")
 	}
 
 	_, err = h.service.CreateUser(c.Context(), &users.CreateUserRequest{
@@ -56,21 +56,25 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 	return c.SendStatus(201)
 }
 
-// func (h *Handler) UpdateUser(c *fiber.Ctx) error{
-// 	u := &model.User{}
-// 	err := c.BodyParser(u)
-// 	if err != nil {
-// 		return c.Status(500).SendString(err.Error())
-// 	}
-// 	_, err = h.service.CreateUser(c.Context(), &users.CreateUserRequest{
-// 		Name:     u.Name,
-// 		Surname:  u.Surname,
-// 		Email:    u.Email,
-// 		Password: u.Password,
-// 	})
-// 	if err != nil {
-// 		return c.Status(500).SendString(err.Error())
-// 	}
+func (h *Handler) UpdateUser(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	u := &model.User{}
+	err := c.BodyParser(u)
+	if err != nil {
+		return c.Status(500).SendString("Invalid input")
+	}
 
-// 	return c.SendStatus(201)
-// }
+	user, err := h.service.UpdateUser(c.Context(), &users.UpdateUserRequest{
+		User: &users.User{
+			Id:       idParam,
+			Name:     u.Name,
+			Surname:  u.Surname,
+			Email:    u.Email,
+			Password: u.Password,
+		},
+	})
+	if err != nil {
+		return c.Status(http.StatusNotFound).SendString("User not found")
+	}
+	return c.JSON(user)
+}

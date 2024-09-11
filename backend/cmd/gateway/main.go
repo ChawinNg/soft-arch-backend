@@ -23,9 +23,11 @@ func main() {
 
 	userConn := userService.NewUserServiceClient(conn)
 	userHandler := user.NewHandler(userConn)
+
 	r.Get("/users/:id", userHandler.GetUser)
 	r.Get("/users", userHandler.GetAllUsers)
 	r.Post("/users", userHandler.CreateUser)
+	r.Post("/users/:id", userHandler.UpdateUser)
 
 	err = r.Listen(fmt.Sprintf(":%v", "8080"))
 	if err != nil {

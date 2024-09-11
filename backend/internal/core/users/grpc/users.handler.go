@@ -74,3 +74,25 @@ func (h *Handler) CreateUser(c context.Context, u *users.CreateUserRequest) (*us
 	_, err := h.db.InsertOne(c, u)
 	return nil, err
 }
+
+func (h *Handler) UpdateUser(c context.Context, u *users.UpdateUserRequest) (*users.UpdateUserResponse, error) {
+	id, err := primitive.ObjectIDFromHex(u.User.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"name":     u.User.Name,
+			"surname":  u.User.Surname,
+			"email":    u.User.Email,
+			"password": u.User.Password,
+		},
+	}
+	result, err := h.db.UpdateOne(c, bson.M{"_id": id}, update)
+	if err != nil || result.MatchedCount == 0 {
+		return nil, err
+	}
+
+	return &users.UpdateUserResponse{User: u.User}, err
+}
