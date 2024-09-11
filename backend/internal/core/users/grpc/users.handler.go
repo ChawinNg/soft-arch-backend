@@ -96,3 +96,17 @@ func (h *Handler) UpdateUser(c context.Context, u *users.UpdateUserRequest) (*us
 
 	return &users.UpdateUserResponse{User: u.User}, err
 }
+
+func (h *Handler) DeleteUser(c context.Context, user_id *users.DeleteUserRequest) (*users.DeleteUserResponse, error) {
+	id, err := primitive.ObjectIDFromHex(user_id.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteResult, err := h.db.DeleteOne(c, bson.M{"_id": id})
+	if err != nil || deleteResult.DeletedCount == 0 {
+		return nil, err
+	}
+
+	return &users.DeleteUserResponse{}, err
+}

@@ -1,36 +1,62 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
+	"log"
+	"os"
 
+	"backend/internal/core/courses"
+	user "backend/internal/core/users/rest"
+	"backend/internal/database"
 	userService "backend/internal/genproto/users"
 
 	"github.com/gofiber/fiber/v2"
+	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	user "backend/internal/core/users/rest"
 )
 
 func main() {
+	// Initialize Fiber
+	app := fiber.New()
 
-	conn, err := grpc.NewClient("localhost:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// gRPC Client
+	grpc_host := os.Getenv("GRPC_SERVER_HOST")
+	conn, err := grpc.NewClient(grpc_host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
 
-	r := fiber.New()
+	// Connect to MySQL
+	sqlDSN := os.Getenv("SQL_DB_DSN")
+	dbSQL, err := sql.Open("mysql", sqlDSN)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dbSQL.Close()
+	database.DB = dbSQL
 
+	//Define Handlers & Services
 	userConn := userService.NewUserServiceClient(conn)
 	userHandler := user.NewHandler(userConn)
 
-	r.Get("/users/:id", userHandler.GetUser)
-	r.Get("/users", userHandler.GetAllUsers)
-	r.Post("/users", userHandler.CreateUser)
-	r.Post("/users/:id", userHandler.UpdateUser)
+	courseService := courses.NewCourseService(dbSQL)
+	courseHandler := courses.NewCourseHandler(courseService)
 
-	err = r.Listen(fmt.Sprintf(":%v", "8080"))
-	if err != nil {
-		panic(err)
-	}
+	// Define route
+	app.Get("/users/:id", userHandler.GetUser)
+	app.Get("/users", userHandler.GetAllUsers)
+	app.Post("/users", userHandler.CreateUser)
+	app.Post("/users/:id", userHandler.UpdateUser)
+	app.Delete("/users/:id", userHandler.DeleteUser)
+
+	app.Get("/courses", courseHandler.GetCourses)
+	app.Get("/courses/:id", courseHandler.GetCourse)
+	app.Post("/courses", courseHandler.CreateCourse)
+	app.Put("/courses/:id", courseHandler.UpdateCourse)
+	app.Delete("/courses/:id", courseHandler.DeleteCourse)
+
+	// Start the server
+	log.Fatal(app.Listen(":8080"))
+
 }

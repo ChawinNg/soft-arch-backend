@@ -27,7 +27,6 @@ func main() {
 
 	if err != nil {
 		log.Fatal(err)
-
 	}
 
 	db := client.Database("reg_dealer")

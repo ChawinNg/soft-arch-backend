@@ -50,7 +50,9 @@ message DeleteUserRequest {
     string id = 1;
 }
 
-message DeleteUserResponse {}
+message DeleteUserResponse {
+    string id = 1;
+}
 
 // Define the User service
 service UserService {

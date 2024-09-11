@@ -78,3 +78,12 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 	}
 	return c.JSON(user)
 }
+
+func (h *Handler) DeleteUser(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	user, err := h.service.DeleteUser(c.Context(), &users.DeleteUserRequest{Id: idParam})
+	if err != nil {
+		return c.Status(http.StatusNotFound).SendString("User not found")
+	}
+	return c.JSON(user)
+}
