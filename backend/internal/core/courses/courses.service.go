@@ -6,11 +6,11 @@ import (
 )
 
 type CourseService struct {
-    db *sql.DB
+	db *sql.DB
 }
 
 func NewCourseService(db *sql.DB) *CourseService {
-    return &CourseService{db: db}
+	return &CourseService{db: db}
 }
 
 func (s *CourseService) GetAllCourses() ([]Course, error) {
@@ -21,16 +21,16 @@ func (s *CourseService) GetAllCourses() ([]Course, error) {
     }
     defer rows.Close()
 
-    var courses []Course
-    for rows.Next() {
-        var course Course
-        if err := rows.Scan(&course.CourseID, &course.Description, &course.CourseType, &course.CourseGroupID); err != nil {
-            log.Println("Error scanning course:", err)
-            return nil, err
-        }
-        courses = append(courses, course)
-    }
-    return courses, nil
+	var courses []Course
+	for rows.Next() {
+		var course Course
+		if err := rows.Scan(&course.CourseID, &course.Description, &course.CourseType, &course.CourseGroupID); err != nil {
+			log.Println("Error scanning course:", err)
+			return nil, err
+		}
+		courses = append(courses, course)
+	}
+	return courses, nil
 }
 
 func (s *CourseService) CreateCourse(course Course) error {
