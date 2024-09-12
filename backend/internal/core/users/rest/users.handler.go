@@ -3,7 +3,11 @@ package users
 import (
 	"backend/internal/genproto/users"
 	"backend/internal/model"
+	"backend/internal/utils"
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -36,14 +40,14 @@ func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
-func (h *Handler) CreateUser(c *fiber.Ctx) error {
+func (h *Handler) RegisterUser(c *fiber.Ctx) error {
 	u := &model.User{}
 	err := c.BodyParser(u)
 	if err != nil {
 		return c.Status(500).SendString("Invalid input")
 	}
 
-	_, err = h.service.CreateUser(c.Context(), &users.CreateUserRequest{
+	_, err = h.service.RegisterUser(c.Context(), &users.RegisterUserRequest{
 		Sid:      u.Sid,
 		Name:     u.Name,
 		Surname:  u.Surname,
@@ -88,4 +92,31 @@ func (h *Handler) DeleteUser(c *fiber.Ctx) error {
 		return c.Status(http.StatusNotFound).SendString("User not found")
 	}
 	return c.JSON(user)
+}
+
+func (h *Handler) LoginUser(c *fiber.Ctx) error {
+	u := &model.User{}
+	err := c.BodyParser(u)
+	if err != nil {
+		return c.Status(500).SendString("Invalid input")
+	}
+
+	token, err := h.service.LoginUser(c.Context(), &users.LoginRequest{
+		Sid:      u.Sid,
+		Password: u.Password,
+	})
+	if err != nil {
+		return c.Status(500).SendString("Invalid student id or password")
+	}
+
+	session_expire, err := strconv.Atoi(os.Getenv("SESSION_EXPIRE"))
+	if err != nil {
+		log.Fatalf("Error converting SISSION_EXPIRE to int: %v", err)
+	}
+
+	c.Cookie(utils.CreateSessionCookie(token.Token, session_expire))
+	return c.JSON(fiber.Map{
+		"success": true,
+		"token":   token,
+	})
 }

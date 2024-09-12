@@ -46,9 +46,11 @@ func main() {
 	// Define route
 	app.Get("/users/:id", userHandler.GetUser)
 	app.Get("/users", userHandler.GetAllUsers)
-	app.Post("/users", userHandler.CreateUser)
 	app.Post("/users/:id", userHandler.UpdateUser)
 	app.Delete("/users/:id", userHandler.DeleteUser)
+
+	app.Post("/register", userHandler.RegisterUser)
+	app.Post("/login", userHandler.LoginUser)
 
 	app.Get("/courses", courseHandler.GetCourses)
 	app.Get("/courses/:id", courseHandler.GetCourse)

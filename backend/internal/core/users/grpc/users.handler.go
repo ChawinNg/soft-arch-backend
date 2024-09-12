@@ -3,12 +3,20 @@ package users
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
+	"strconv"
+	"time"
 
 	"backend/internal/genproto/users"
 	"backend/internal/model"
+	"backend/internal/utils"
+
+	_ "github.com/joho/godotenv/autoload"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -21,6 +29,18 @@ func NewHandler(db *mongo.Database) *Handler {
 	return &Handler{
 		db: db.Collection("users"),
 	}
+}
+
+// Hash password
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+// Compare hashed password
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
 func (h *Handler) GetUser(c context.Context, user_id *users.GetUserRequest) (*users.GetUserResponse, error) {
@@ -70,8 +90,21 @@ func (h *Handler) GetAllUser(c context.Context, _ *users.GetAllUserRequest) (*us
 	return &users.GetAllUserResponse{User: users_set}, nil
 }
 
-func (h *Handler) CreateUser(c context.Context, u *users.CreateUserRequest) (*users.CreateUserResponse, error) {
-	_, err := h.db.InsertOne(c, u)
+func (h *Handler) RegisterUser(c context.Context, u *users.RegisterUserRequest) (*users.RegisterUserResponse, error) {
+	hashedPassword, err := hashPassword(u.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	reg_user := bson.M{
+		"sid":      u.Sid,
+		"name":     u.Name,
+		"surname":  u.Surname,
+		"email":    u.Email,
+		"password": hashedPassword,
+	}
+
+	_, err = h.db.InsertOne(c, reg_user)
 	return nil, err
 }
 
@@ -108,4 +141,41 @@ func (h *Handler) DeleteUser(c context.Context, user_id *users.DeleteUserRequest
 	}
 
 	return &users.DeleteUserResponse{}, err
+}
+
+func (h *Handler) LoginUser(c context.Context, u *users.LoginRequest) (*users.LoginResponse, error) {
+	var user model.User
+	err := h.db.FindOne(c, bson.M{"sid": u.Sid}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	grpcUser, err := model.ConvertMongoToGrpc(user)
+	if err != nil {
+		return nil, err
+	}
+
+	passwordHash := grpcUser.Password
+	if !checkPasswordHash(u.Password, passwordHash) {
+		return nil, errors.New("invalid email or password")
+	}
+
+	session := model.Sessions{
+		UserId: grpcUser.Id,
+		Email:  grpcUser.Email,
+	}
+
+	session_expire, err := strconv.Atoi(os.Getenv("SESSION_EXPIRE"))
+	if err != nil {
+		log.Fatalf("Error converting SISSION_EXPIRE to int: %v", err)
+	}
+
+	jwt_secret := os.Getenv("JWT_SECRET")
+
+	token, err := utils.CreateJwtToken(session, time.Duration(session_expire*int(time.Second)), jwt_secret)
+	if err != nil {
+		return nil, errors.New("cannot create jwt token")
+	}
+
+	return &users.LoginResponse{Token: token}, nil
 }
