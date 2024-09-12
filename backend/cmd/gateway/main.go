@@ -9,6 +9,7 @@ import (
 	user "backend/internal/core/users/rest"
 	"backend/internal/database"
 	userService "backend/internal/genproto/users"
+	"backend/internal/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	_ "github.com/joho/godotenv/autoload"
@@ -43,14 +44,20 @@ func main() {
 	courseService := courses.NewCourseService(dbSQL)
 	courseHandler := courses.NewCourseHandler(courseService)
 
-	// Define route
-	app.Get("/users/:id", userHandler.GetUser)
-	app.Get("/users", userHandler.GetAllUsers)
-	app.Post("/users/:id", userHandler.UpdateUser)
-	app.Delete("/users/:id", userHandler.DeleteUser)
+	//Define Middleware
+	secret := os.Getenv("JWT_SECRET")
+	mw := middleware.NewMiddleware(secret)
+	apiv1 := app.Group("/api/v1", mw.SessionMiddleware)
 
-	app.Post("/register", userHandler.RegisterUser)
-	app.Post("/login", userHandler.LoginUser)
+	// Define route
+	apiv1.Get("/users/me", mw.WithAuthentication(userHandler.GetCurrentUser))
+	apiv1.Get("/users/:id", mw.WithAuthentication(userHandler.GetUser))
+	apiv1.Get("/users", mw.WithAuthentication(userHandler.GetAllUsers))
+	apiv1.Put("/users/:id", mw.WithAuthentication(userHandler.UpdateUser))
+	apiv1.Delete("/users/:id", mw.WithAuthentication(userHandler.DeleteUser))
+
+	apiv1.Post("/register", userHandler.RegisterUser)
+	apiv1.Post("/login", userHandler.LoginUser)
 
 	app.Get("/courses", courseHandler.GetCourses)
 	app.Get("/courses/:id", courseHandler.GetCourse)

@@ -117,6 +117,18 @@ func (h *Handler) LoginUser(c *fiber.Ctx) error {
 	c.Cookie(utils.CreateSessionCookie(token.Token, session_expire))
 	return c.JSON(fiber.Map{
 		"success": true,
-		"token":   token,
+		"token":   token.Token,
 	})
+}
+
+func (h *Handler) GetCurrentUser(c *fiber.Ctx) error {
+	session := c.Locals("session").(model.Sessions)
+	user, err := h.service.GetUser(c.Context(), &users.GetUserRequest{
+		Id: session.UserId,
+	})
+	if err != nil {
+		return c.Status(http.StatusNotFound).SendString("User not found")
+	}
+
+	return c.JSON(user)
 }
