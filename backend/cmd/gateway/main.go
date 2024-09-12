@@ -11,6 +11,7 @@ import (
 	userService "backend/internal/genproto/users"
 	"backend/internal/middleware"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
 	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/grpc"
@@ -36,6 +37,7 @@ func main() {
 	}
 	defer dbSQL.Close()
 	database.DB = dbSQL
+	database.NewSQL()
 
 	//Define Handlers & Services
 	userConn := userService.NewUserServiceClient(conn)
@@ -59,11 +61,11 @@ func main() {
 	apiv1.Post("/register", userHandler.RegisterUser)
 	apiv1.Post("/login", userHandler.LoginUser)
 
-	app.Get("/courses", courseHandler.GetCourses)
-	app.Get("/courses/:id", courseHandler.GetCourse)
-	app.Post("/courses", courseHandler.CreateCourse)
-	app.Put("/courses/:id", courseHandler.UpdateCourse)
-	app.Delete("/courses/:id", courseHandler.DeleteCourse)
+	apiv1.Get("/courses", courseHandler.GetCourses)
+	apiv1.Get("/courses/:id", courseHandler.GetCourse)
+	apiv1.Post("/courses", courseHandler.CreateCourse)
+	apiv1.Put("/courses/:id", courseHandler.UpdateCourse)
+	apiv1.Delete("/courses/:id", courseHandler.DeleteCourse)
 
 	// Start the server
 	log.Fatal(app.Listen(":8080"))

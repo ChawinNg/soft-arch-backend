@@ -1,10 +1,9 @@
 package courses
 
 import (
-    "encoding/json"
-    "strconv"
+	"strconv"
 
-    "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 type CourseHandler struct {
