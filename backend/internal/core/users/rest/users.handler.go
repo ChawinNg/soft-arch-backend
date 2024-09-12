@@ -44,6 +44,7 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 	}
 
 	_, err = h.service.CreateUser(c.Context(), &users.CreateUserRequest{
+		Sid:      u.Sid,
 		Name:     u.Name,
 		Surname:  u.Surname,
 		Email:    u.Email,
@@ -67,6 +68,7 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 	user, err := h.service.UpdateUser(c.Context(), &users.UpdateUserRequest{
 		User: &users.User{
 			Id:       idParam,
+			Sid:      u.Sid,
 			Name:     u.Name,
 			Surname:  u.Surname,
 			Email:    u.Email,

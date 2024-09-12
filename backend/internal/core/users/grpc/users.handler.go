@@ -83,10 +83,9 @@ func (h *Handler) UpdateUser(c context.Context, u *users.UpdateUserRequest) (*us
 
 	update := bson.M{
 		"$set": bson.M{
-			"name":     u.User.Name,
-			"surname":  u.User.Surname,
-			"email":    u.User.Email,
-			"password": u.User.Password,
+			"name":    u.User.Name,
+			"surname": u.User.Surname,
+			"email":   u.User.Email,
 		},
 	}
 	result, err := h.db.UpdateOne(c, bson.M{"_id": id}, update)

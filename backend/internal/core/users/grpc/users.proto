@@ -7,10 +7,11 @@ option go_package = "internal/genproto/users;users";
 // Define the User message
 message User {
     string id = 1;
-    string name = 2;
-    string surname = 3;
-    string email = 4;
-    string password = 5;
+    string sid = 2;
+    string name = 3;
+    string surname = 4;
+    string email = 5;
+    string password = 6;
 }
 
 message GetUserRequest {
@@ -28,10 +29,11 @@ message GetAllUserResponse {
 }
 
 message CreateUserRequest {
-    string name = 1;
-    string surname = 2;
-    string email = 3;
-    string password = 4;
+    string sid = 1;
+    string name = 2;
+    string surname = 3;
+    string email = 4;
+    string password = 5;
 }
 
 message CreateUserResponse {

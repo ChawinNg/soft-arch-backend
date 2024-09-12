@@ -10,6 +10,7 @@ import (
 // User represents a user in MongoDB
 type User struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Sid      string             `bson:"sid"`
 	Name     string             `bson:"name"`
 	Surname  string             `bson:"surname"`
 	Email    string             `bson:"email"`
@@ -20,6 +21,7 @@ func ConvertMongoToGrpc(user User) (*users.User, error) {
 	id := user.ID.Hex() // Convert ObjectID to hex string
 	return &users.User{
 		Id:       id,
+		Sid:      user.Sid,
 		Name:     user.Name,
 		Surname:  user.Surname,
 		Email:    user.Email,
@@ -34,6 +36,7 @@ func ConvertGrpcToMongo(user *users.User) (*User, error) {
 	}
 	return &User{
 		ID:       objectID,
+		Sid:      user.Sid,
 		Name:     user.Name,
 		Surname:  user.Surname,
 		Email:    user.Email,
