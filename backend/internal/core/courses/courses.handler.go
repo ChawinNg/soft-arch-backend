@@ -86,24 +86,21 @@ func (h *CourseHandler) DeleteCourse(c *fiber.Ctx) error {
 }
 
 func (h *CourseHandler) GetCoursesPaginated(c *fiber.Ctx) error {
-    // Parse pagination parameters from query parameters
-    page, err := strconv.Atoi(c.Query("page", "1")) // Default to page 1 if not provided
+    page, err := strconv.Atoi(c.Query("page", "1"))
     if err != nil || page < 1 {
         return c.Status(fiber.StatusBadRequest).SendString("Invalid page number")
     }
-    pageSize, err := strconv.Atoi(c.Query("pageSize", "10")) // Default to 10 items per page if not provided
+    pageSize, err := strconv.Atoi(c.Query("pageSize", "10"))
     if err != nil || pageSize < 1 {
         return c.Status(fiber.StatusBadRequest).SendString("Invalid page size")
     }
 
-    // Fetch paginated courses
     offset := (page - 1) * pageSize
     courses, totalCourses, err := h.service.GetCoursesPaginated(offset, pageSize)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving courses")
     }
 
-    // Fetch sections for each course
     var coursesWithSections []struct {
         Course   Course       `json:"course"`
         Sections []LocalSection `json:"sections"`
@@ -138,7 +135,7 @@ func (h *CourseHandler) GetCoursesPaginated(c *fiber.Ctx) error {
     }
 
     return c.JSON(fiber.Map{
-        "totalCourses": totalCourses, // Ensure this is the total count, not the length of current page items
+        "totalCourses": totalCourses,
         "courses":      coursesWithSections,
     })
 }

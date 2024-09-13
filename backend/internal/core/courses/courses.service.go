@@ -73,7 +73,6 @@ func (s *CourseService) DeleteCourse(id string) error {
 }
 
 func (s *CourseService) GetCoursesPaginated(offset, limit int) ([]Course, int, error) {
-    // Query to get courses with pagination
     rows, err := s.db.Query(`SELECT id, description, course_name, course_full_name, course_type, grading_type, faculty, midterm_exam_date, final_exam_date, credit, course_group_id 
                               FROM courses LIMIT ? OFFSET ?`, limit, offset)
     if err != nil {
@@ -90,7 +89,6 @@ func (s *CourseService) GetCoursesPaginated(offset, limit int) ([]Course, int, e
         courses = append(courses, course)
     }
 
-    // Get total number of courses
     var totalCourses int
     err = s.db.QueryRow(`SELECT COUNT(*) FROM courses`).Scan(&totalCourses)
     if err != nil {

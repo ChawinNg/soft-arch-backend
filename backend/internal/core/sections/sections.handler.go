@@ -127,20 +127,16 @@ func (h *SectionHandler) DeleteSection(c *fiber.Ctx) error {
 }
 
 func (h *SectionHandler) GetSectionsByCourseID(c *fiber.Ctx) error {
-	// Extract the course ID from the query parameters.
 	courseID := c.Params("id")
 	if courseID == "" {
 		return c.Status(fiber.StatusBadRequest).SendString("course_id is required")
 	}
 
-	// Retrieve sections with details using the service.
 	sections, err := h.service.GetSectionsByCourseID(courseID)
 	if err != nil {
-		// Log the error and send an internal server error response.
 		c.Status(fiber.StatusInternalServerError).SendString("Failed to fetch sections")
 		return err
 	}
 
-	// Return the sections as a JSON response.
 	return c.JSON(sections)
 }

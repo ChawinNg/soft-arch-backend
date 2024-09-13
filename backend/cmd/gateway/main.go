@@ -14,6 +14,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,6 +24,13 @@ func main() {
 	// Initialize Fiber
 	app := fiber.New()
 
+	app.Use(cors.New(cors.Config{
+        AllowOrigins: "http://localhost:3000", // Specify the allowed origin(s)
+        AllowMethods: "GET,POST,PUT,DELETE",    // Specify allowed methods
+        AllowHeaders: "Content-Type, Authorization", // Specify allowed headers
+		AllowCredentials: true,
+    }))
+	
 	// gRPC Client
 	grpc_host := os.Getenv("GRPC_SERVER_HOST")
 	conn, err := grpc.NewClient(grpc_host, grpc.WithTransportCredentials(insecure.NewCredentials()))
