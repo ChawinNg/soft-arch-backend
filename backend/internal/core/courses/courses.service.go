@@ -14,7 +14,7 @@ func NewCourseService(db *sql.DB) *CourseService {
 }
 
 func (s *CourseService) GetAllCourses() ([]Course, error) {
-	rows, err := s.db.Query("SELECT courseId, description, courseType, courseGroupId FROM courses")
+	rows, err := s.db.Query("SELECT id, description, course_name, course_full_name, course_type, grading_type, faculty, midterm_exam_date, final_exam_date, credit, course_group_id FROM courses")
 	if err != nil {
 		log.Println("Error fetching courses:", err)
 		return nil, err
@@ -24,7 +24,7 @@ func (s *CourseService) GetAllCourses() ([]Course, error) {
 	var courses []Course
 	for rows.Next() {
 		var course Course
-		if err := rows.Scan(&course.CourseID, &course.Description, &course.CourseType, &course.CourseGroupID); err != nil {
+		if err := rows.Scan(&course.CourseID, &course.Description, &course.CourseName, &course.CourseFullName, &course.CourseType, &course.GradingType, &course.Faculty, &course.MidtermExam, &course.FinalExam, &course.Credit, &course.CourseGroupID); err != nil {
 			log.Println("Error scanning course:", err)
 			return nil, err
 		}
@@ -34,8 +34,8 @@ func (s *CourseService) GetAllCourses() ([]Course, error) {
 }
 
 func (s *CourseService) CreateCourse(course Course) error {
-	_, err := s.db.Exec("INSERT INTO courses(courseId, description, courseType, courseGroupId) VALUES (?, ?, ?, ?)",
-		course.CourseID, course.Description, course.CourseType, course.CourseGroupID)
+	_, err := s.db.Exec("INSERT INTO courses (id, description, course_name, course_full_name, course_type, grading_type, faculty, midterm_exam_date, final_exam_date, credit, course_group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		course.CourseID, course.Description, course.CourseName, course.CourseFullName, course.CourseType, course.GradingType, course.Faculty, course.MidtermExam, course.FinalExam, course.Credit, course.CourseGroupID)
 	if err != nil {
 		log.Println("Error creating course:", err)
 		return err
@@ -43,10 +43,10 @@ func (s *CourseService) CreateCourse(course Course) error {
 	return nil
 }
 
-func (s *CourseService) GetCourseByID(id int) (Course, error) {
+func (s *CourseService) GetCourseByID(id string) (Course, error) {
 	var course Course
-	err := s.db.QueryRow("SELECT courseId, description, courseType, courseGroupId FROM courses WHERE courseId = ?", id).
-		Scan(&course.CourseID, &course.Description, &course.CourseType, &course.CourseGroupID)
+	err := s.db.QueryRow("SELECT id, description, course_name, course_full_name, course_type, grading_type, faculty, midterm_exam_date, final_exam_date, credit, course_group_id FROM courses WHERE id = ?", id).
+		Scan(&course.CourseID, &course.Description, &course.CourseName, &course.CourseFullName, &course.CourseType, &course.GradingType, &course.Faculty, &course.MidtermExam, &course.FinalExam, &course.Credit, &course.CourseGroupID)
 	if err == sql.ErrNoRows {
 		return course, err
 	}
@@ -54,8 +54,8 @@ func (s *CourseService) GetCourseByID(id int) (Course, error) {
 }
 
 func (s *CourseService) UpdateCourse(course Course) error {
-	_, err := s.db.Exec("UPDATE courses SET description = ?, courseType = ?, courseGroupId = ? WHERE courseId = ?",
-		course.Description, course.CourseType, course.CourseGroupID, course.CourseID)
+	_, err := s.db.Exec("UPDATE courses SET description = ?, course_name = ?, course_full_name = ?, course_type = ?, grading_type = ?, faculty = ?, midterm_exam_date = ?, final_exam_date = ?, credit = ?, course_group_id = ? WHERE id = ?",
+		course.Description, course.CourseName, course.CourseFullName, course.CourseType, course.GradingType, course.Faculty, course.MidtermExam, course.FinalExam, course.Credit, course.CourseGroupID, course.CourseID)
 	if err != nil {
 		log.Println("Error updating course:", err)
 		return err
@@ -63,11 +63,12 @@ func (s *CourseService) UpdateCourse(course Course) error {
 	return nil
 }
 
-func (s *CourseService) DeleteCourse(id int) error {
-	_, err := s.db.Exec("DELETE FROM courses WHERE courseId = ?", id)
+func (s *CourseService) DeleteCourse(id string) error {
+	_, err := s.db.Exec("DELETE FROM courses WHERE id = ?", id)
 	if err != nil {
 		log.Println("Error deleting course:", err)
 		return err
 	}
 	return nil
 }
+

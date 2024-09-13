@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS instructors (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  faculty ENUM(
+    'Science', 
+    'Arts', 
+    'Medicine', 
+    'Law', 
+    'Allied Health Science', 
+    'Architecture',
+    'Commerce and Accountancy', 
+    'Communication Arts', 
+    'Dentistry', 
+    'Economics', 
+    'Education', 
+    'Engineering', 
+    'Fine and Applied Arts', 
+    'Nursing',
+    'Pharmaceutical Sciences',
+    'Political Science',
+    'Psychology',
+    'Sports Science',
+    'Veterinary Science',
+    'Integrated Innovation',
+    'Agricultural Resources',
+    'Graduate School'
+    ),
+  full_name VARCHAR(255) NOT NULL,
+  display_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
+  phone_number VARCHAR(255)
+);

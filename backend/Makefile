@@ -1,4 +1,17 @@
 # Simple Makefile for a Go project
+include .env
+
+create_migration:
+	migrate create -ext=sql -dir=migrations -seq init
+
+migrate_up:
+	migrate -path=migrations -database "mysql://${SQL_DB_DSN}" -verbose up
+
+migrate_down:
+	migrate -path=migrations -database "mysql://${SQL_DB_DSN}" -verbose down
+
+
+.PHONY: create_migration migrate_up migrate_down
 
 # Build the application
 all: build
