@@ -44,8 +44,11 @@ func main() {
 	userConn := userService.NewUserServiceClient(conn)
 	userHandler := user.NewHandler(userConn)
 
+	sectionService := sections.NewSectionService(dbSQL)
+    sectionHandler := sections.NewSectionHandler(sectionService)
+
 	courseService := courses.NewCourseService(dbSQL)
-	courseHandler := courses.NewCourseHandler(courseService)
+	courseHandler := courses.NewCourseHandler(courseService, sectionService)
 
 	//Define Middleware
 	secret := os.Getenv("JWT_SECRET")
@@ -63,13 +66,11 @@ func main() {
 	apiv1.Post("/login", userHandler.LoginUser)
 
 	apiv1.Get("/courses", courseHandler.GetCourses)
+	apiv1.Get("/courses/paginated", courseHandler.GetCoursesPaginated)
 	apiv1.Get("/courses/:id", courseHandler.GetCourse)
 	apiv1.Post("/courses", courseHandler.CreateCourse)
 	apiv1.Put("/courses/:id", courseHandler.UpdateCourse)
 	apiv1.Delete("/courses/:id", courseHandler.DeleteCourse)
-
-	sectionService := sections.NewSectionService(dbSQL)
-    sectionHandler := sections.NewSectionHandler(sectionService)
 
     apiv1.Get("/sections", sectionHandler.GetAllSections)
     apiv1.Get("/sections/courses/:id", sectionHandler.GetSectionsByCourseID)

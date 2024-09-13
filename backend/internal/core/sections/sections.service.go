@@ -3,20 +3,10 @@ package sections
 import (
 	"database/sql"
 	"log"
-	"strconv"
 )
 
 type SectionService struct {
 	db *sql.DB
-}
-
-type Instructor struct {
-	InstructorID int
-	FullName     string
-	Faculty      string
-	DisplayName  string
-	Email        *string
-	PhoneNumber  *string
 }
 
 func NewSectionService(db *sql.DB) *SectionService {
@@ -126,14 +116,14 @@ func (s *SectionService) GetSectionsByCourseID(id string) ([]Section, error) {
 	return sections, nil
 }
 
-func (s *SectionService) getInstructorsForSection(sectionID int) ([][]string, error) {
+func (s *SectionService) getInstructorsForSection(sectionID int) ([]Instructor, error) {
 	rows, err := s.db.Query(`SELECT instructor_id FROM section_instructors WHERE section_id = ?`, sectionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var instructors [][]string
+	var instructors []Instructor
 
 	for rows.Next() {
 		var instructorID int
@@ -150,24 +140,17 @@ func (s *SectionService) getInstructorsForSection(sectionID int) ([][]string, er
 			}
 			return nil, err
 		}
-		email := ""
-        if instructor.Email != nil {
-            email = *instructor.Email
-        }
+		// email := ""
+        // if instructor.Email != nil {
+        //     email = *instructor.Email
+        // }
         
-        phoneNumber := ""
-        if instructor.PhoneNumber != nil {
-            phoneNumber = *instructor.PhoneNumber
-        }
+        // phoneNumber := ""
+        // if instructor.PhoneNumber != nil {
+        //     phoneNumber = *instructor.PhoneNumber
+        // }
 
-		instructors = append(instructors, []string{
-			strconv.Itoa(instructor.InstructorID),
-			instructor.FullName,
-			instructor.Faculty,
-			instructor.DisplayName,
-			email,
-			phoneNumber,
-		})
+		instructors = append(instructors, instructor)
 	}
 
 	if err := rows.Err(); err != nil {

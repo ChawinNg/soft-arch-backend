@@ -10,8 +10,8 @@ type Course struct {
 	CourseType     string    `json:"course_type"`
 	GradingType    string    `json:"grading_type"`
 	Faculty        string    `json:"faculty"`
-	MidtermExam    time.Time `json:"midterm_exam_date"`
-	FinalExam      time.Time `json:"final_exam_date"`
+	MidtermExam    *time.Time `json:"midterm_exam_date"`
+	FinalExam      *time.Time `json:"final_exam_date"`
 	Credit         int       `json:"credit"`
-	CourseGroupID  int       `json:"course_group_id"`
+	CourseGroupID  *int       `json:"course_group_id"`
 }
