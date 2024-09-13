@@ -1,8 +1,11 @@
 package sections
 
 type Section struct {
-	CourseID  int `json:"courseId"`
-	SectionID int `json:"sectionId"`
-	Section   int `json:"section"`
-	Capacity  int `json:"capacity"`
+	CourseID    string      `json:"courseId"`
+	SectionID   int         `json:"id"`
+	Section     int         `json:"section"`
+	Capacity    int         `json:"capacity"`
+	Room        *string     `json:"room"`
+	Timeslots   [][]string `json:"timeslots"`
+	Instructors [][]string `json:"instructors"`
 }

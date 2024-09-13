@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"backend/internal/core/courses"
+	"backend/internal/core/sections"
 	user "backend/internal/core/users/rest"
 	"backend/internal/database"
 	userService "backend/internal/genproto/users"
@@ -66,6 +67,16 @@ func main() {
 	apiv1.Post("/courses", courseHandler.CreateCourse)
 	apiv1.Put("/courses/:id", courseHandler.UpdateCourse)
 	apiv1.Delete("/courses/:id", courseHandler.DeleteCourse)
+
+	sectionService := sections.NewSectionService(dbSQL)
+    sectionHandler := sections.NewSectionHandler(sectionService)
+
+    apiv1.Get("/sections", sectionHandler.GetAllSections)
+    apiv1.Get("/sections/courses/:id", sectionHandler.GetSectionsByCourseID)
+    apiv1.Get("/sections/:id", sectionHandler.GetSectionByID)
+    apiv1.Post("/sections", sectionHandler.CreateSection)
+    apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
+    apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
 
 	// Start the server
 	log.Fatal(app.Listen(":8080"))

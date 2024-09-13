@@ -1,8 +1,6 @@
 package courses
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -37,11 +35,7 @@ func (h *CourseHandler) CreateCourse(c *fiber.Ctx) error {
 }
 
 func (h *CourseHandler) GetCourse(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid course ID")
-	}
-
+	id := c.Params("id")
 	course, err := h.service.GetCourseByID(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).SendString("Course not found")
@@ -64,10 +58,7 @@ func (h *CourseHandler) UpdateCourse(c *fiber.Ctx) error {
 }
 
 func (h *CourseHandler) DeleteCourse(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid course ID")
-	}
+	id := c.Params("id")
 
 	if err := h.service.DeleteCourse(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error deleting course")

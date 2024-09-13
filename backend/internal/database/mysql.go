@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -11,7 +12,8 @@ var DB *sql.DB
 
 func NewSQL() {
     var err error
-    DB, err = sql.Open("mysql", "admin:root@tcp(localhost:3308)/root")
+	sqlDSN := os.Getenv("SQL_DB_DSN")
+    DB, err = sql.Open("mysql", sqlDSN)
     if err != nil {
         log.Fatal(err)
     }
