@@ -13,8 +13,9 @@ type Section struct {
 	CourseID    string       `json:"courseId"`
 	SectionID   int          `json:"id"`
 	Section     int          `json:"section"`
+	MaxCapacity int          `json:"max_capacity"`
 	Capacity    int          `json:"capacity"`
 	Room        *string      `json:"room"`
-	Timeslots   [][]string   `json:"timeslots"`
+	Timeslots   []string     `json:"timeslots"`
 	Instructors []Instructor `json:"instructors"`
 }

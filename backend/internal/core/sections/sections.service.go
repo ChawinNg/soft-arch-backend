@@ -14,7 +14,7 @@ func NewSectionService(db *sql.DB) *SectionService {
 }
 
 func (s *SectionService) GetAllSections() ([]Section, error) {
-	rows, err := s.db.Query("SELECT id, course_id, section, capacity, room FROM sections")
+	rows, err := s.db.Query("SELECT id, course_id, section, max_capacity, capacity, room FROM sections")
 	if err != nil {
 		log.Println("Error fetching sections:", err)
 		return nil, err
@@ -24,7 +24,7 @@ func (s *SectionService) GetAllSections() ([]Section, error) {
 	var sections []Section
 	for rows.Next() {
 		var section Section
-		if err := rows.Scan(&section.SectionID, &section.CourseID, &section.Section, &section.Capacity, &section.Room); err != nil {
+		if err := rows.Scan(&section.SectionID, &section.CourseID, &section.Section, &section.MaxCapacity, &section.Capacity, &section.Room); err != nil {
 			log.Println("Error scanning section:", err)
 			return nil, err
 		}
@@ -35,7 +35,7 @@ func (s *SectionService) GetAllSections() ([]Section, error) {
 
 func (s *SectionService) GetSectionByID(id int) (Section, error) {
 	var section Section
-	err := s.db.QueryRow("SELECT id, course_id, section, capacity, room FROM sections WHERE id = ?", id).
+	err := s.db.QueryRow("SELECT id, course_id, section, max_capacity, capacity, room FROM sections WHERE id = ?", id).
 		Scan(&section.SectionID, &section.CourseID, &section.Section, &section.Capacity)
 	if err == sql.ErrNoRows {
 		return section, nil // No result found
@@ -57,8 +57,8 @@ func (s *SectionService) CreateSection(section Section) error {
 }
 
 func (s *SectionService) UpdateSection(section Section) error {
-	_, err := s.db.Exec("UPDATE sections SET course_id = ?, section = ?, capacity = ? WHERE id = ?",
-		section.CourseID, section.Section, section.Capacity, section.SectionID)
+	_, err := s.db.Exec("UPDATE sections SET course_id = ?, section = ?, max_capacity = ? capacity = ? WHERE id = ?",
+		section.CourseID, section.Section, section.MaxCapacity, section.Capacity, section.SectionID)
 	if err != nil {
 		log.Println("Error updating section:", err)
 		return err
@@ -82,6 +82,7 @@ func (s *SectionService) GetSectionsByCourseID(id string) ([]Section, error) {
         s.course_id,
         s.section,
         s.room,
+        s.max_capacity,
         s.capacity
     FROM
         sections s
@@ -99,7 +100,7 @@ func (s *SectionService) GetSectionsByCourseID(id string) ([]Section, error) {
 
 	for rows.Next() {
 		var section Section
-		if err := rows.Scan(&section.SectionID, &section.CourseID, &section.Section, &section.Room, &section.Capacity); err != nil {
+		if err := rows.Scan(&section.SectionID, &section.CourseID, &section.Section, &section.Room, &section.MaxCapacity, &section.Capacity); err != nil {
 			log.Println("Error scanning section row:", err)
 			return nil, err
 		}
@@ -140,15 +141,6 @@ func (s *SectionService) getInstructorsForSection(sectionID int) ([]Instructor, 
 			}
 			return nil, err
 		}
-		// email := ""
-        // if instructor.Email != nil {
-        //     email = *instructor.Email
-        // }
-        
-        // phoneNumber := ""
-        // if instructor.PhoneNumber != nil {
-        //     phoneNumber = *instructor.PhoneNumber
-        // }
 
 		instructors = append(instructors, instructor)
 	}
@@ -160,7 +152,7 @@ func (s *SectionService) getInstructorsForSection(sectionID int) ([]Instructor, 
 	return instructors, nil
 }
 
-func (s *SectionService) getTimeSlotsForSection(sectionID int) ([][]string, error) {
+func (s *SectionService) getTimeSlotsForSection(sectionID int) ([]string, error) {
 	query := `
     SELECT
         time
@@ -175,7 +167,7 @@ func (s *SectionService) getTimeSlotsForSection(sectionID int) ([][]string, erro
 	}
 	defer rows.Close()
 
-	var timeSlots [][]string
+	var timeSlots []string
 
 	for rows.Next() {
 		var timeSlot string
@@ -183,7 +175,7 @@ func (s *SectionService) getTimeSlotsForSection(sectionID int) ([][]string, erro
 			return nil, err
 		}
 
-		timeSlots = append(timeSlots, []string{timeSlot})
+		timeSlots = append(timeSlots, timeSlot)
 	}
 
 	if err := rows.Err(); err != nil {

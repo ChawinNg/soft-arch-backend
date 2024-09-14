@@ -13,15 +13,15 @@ type CourseHandler struct {
 }
 
 type LocalSection struct {
-    SectionID   int      `json:"id"`
-    CourseID    string   `json:"courseId"`
-    Section     int      `json:"section"`
-    Capacity    int      `json:"capacity"`
-    Room        *string   `json:"room"`
-    Timeslots   [][]string `json:"timeslots"`
+	SectionID   int                   `json:"id"`
+	CourseID    string                `json:"courseId"`
+	Section     int                   `json:"section"`
+	Capacity    int                   `json:"capacity"`
+	MaxCapacity int                   `json:"max_capacity"`
+	Room        *string               `json:"room"`
+	Timeslots   []string              `json:"timeslots"`
 	Instructors []sections.Instructor `json:"instructors"`
 }
-
 
 func NewCourseHandler(service *CourseService, sectionService *sections.SectionService) *CourseHandler {
 	return &CourseHandler{
@@ -86,56 +86,57 @@ func (h *CourseHandler) DeleteCourse(c *fiber.Ctx) error {
 }
 
 func (h *CourseHandler) GetCoursesPaginated(c *fiber.Ctx) error {
-    page, err := strconv.Atoi(c.Query("page", "1"))
-    if err != nil || page < 1 {
-        return c.Status(fiber.StatusBadRequest).SendString("Invalid page number")
-    }
-    pageSize, err := strconv.Atoi(c.Query("pageSize", "10"))
-    if err != nil || pageSize < 1 {
-        return c.Status(fiber.StatusBadRequest).SendString("Invalid page size")
-    }
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid page number")
+	}
+	pageSize, err := strconv.Atoi(c.Query("pageSize", "10"))
+	if err != nil || pageSize < 1 {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid page size")
+	}
 
-    offset := (page - 1) * pageSize
-    courses, totalCourses, err := h.service.GetCoursesPaginated(offset, pageSize)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving courses")
-    }
+	offset := (page - 1) * pageSize
+	courses, totalCourses, err := h.service.GetCoursesPaginated(offset, pageSize)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving courses")
+	}
 
-    var coursesWithSections []struct {
-        Course   Course       `json:"course"`
-        Sections []LocalSection `json:"sections"`
-    }
+	var coursesWithSections []struct {
+		Course   Course         `json:"course"`
+		Sections []LocalSection `json:"sections"`
+	}
 
-    for _, course := range courses {
-        sections, err := h.sectionService.GetSectionsByCourseID(course.CourseID)
-        if err != nil {
-            return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving sections for course")
-        }
+	for _, course := range courses {
+		sections, err := h.sectionService.GetSectionsByCourseID(course.CourseID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving sections for course")
+		}
 
-        var localSections []LocalSection
-        for _, section := range sections {
-            localSections = append(localSections, LocalSection{
-                SectionID:   section.SectionID,
-                CourseID:    section.CourseID,
-                Section:     section.Section,
-                Capacity:    section.Capacity,
-                Room:        section.Room,
-                Timeslots:   section.Timeslots,
-                Instructors: section.Instructors,
-            })
-        }
+		var localSections []LocalSection
+		for _, section := range sections {
+			localSections = append(localSections, LocalSection{
+				SectionID:   section.SectionID,
+				CourseID:    section.CourseID,
+				Section:     section.Section,
+				MaxCapacity: section.MaxCapacity,
+				Capacity:    section.Capacity,
+				Room:        section.Room,
+				Timeslots:   section.Timeslots,
+				Instructors: section.Instructors,
+			})
+		}
 
-        coursesWithSections = append(coursesWithSections, struct {
-            Course   Course       `json:"course"`
-            Sections []LocalSection `json:"sections"`
-        }{
-            Course:   course,
-            Sections: localSections,
-        })
-    }
+		coursesWithSections = append(coursesWithSections, struct {
+			Course   Course         `json:"course"`
+			Sections []LocalSection `json:"sections"`
+		}{
+			Course:   course,
+			Sections: localSections,
+		})
+	}
 
-    return c.JSON(fiber.Map{
-        "totalCourses": totalCourses,
-        "courses":      coursesWithSections,
-    })
+	return c.JSON(fiber.Map{
+		"totalCourses": totalCourses,
+		"courses":      coursesWithSections,
+	})
 }

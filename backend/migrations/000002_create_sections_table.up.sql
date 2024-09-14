@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS sections (
   course_id VARCHAR(10) NOT NULL,
   section INT NOT NULL DEFAULT 1,
   room VARCHAR(255),
+  max_capacity INT,
   capacity INT,
   FOREIGN KEY (course_id) REFERENCES courses(id)
 );
