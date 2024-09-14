@@ -114,11 +114,17 @@ func (h *Handler) UpdateUser(c context.Context, u *users.UpdateUserRequest) (*us
 		return nil, err
 	}
 
+	hashedPassword, err := hashPassword(u.User.Password)
+	if err != nil {
+		return nil, err
+	}
+
 	update := bson.M{
 		"$set": bson.M{
-			"name":    u.User.Name,
-			"surname": u.User.Surname,
-			"email":   u.User.Email,
+			// "name":     u.User.Name,
+			// "surname":  u.User.Surname,
+			// "email":    u.User.Email,
+			"password": hashedPassword,
 		},
 	}
 	result, err := h.db.UpdateOne(c, bson.M{"_id": id}, update)
