@@ -104,8 +104,12 @@ func (h *Handler) RegisterUser(c context.Context, u *users.RegisterUserRequest) 
 		"password": hashedPassword,
 	}
 
-	_, err = h.db.InsertOne(c, reg_user)
-	return nil, err
+	user, err := h.db.InsertOne(c, reg_user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &users.RegisterUserResponse{Id: user.InsertedID.(primitive.ObjectID).Hex()}, err
 }
 
 func (h *Handler) UpdateUser(c context.Context, u *users.UpdateUserRequest) (*users.UpdateUserResponse, error) {

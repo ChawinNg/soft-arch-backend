@@ -28,7 +28,10 @@ func (h *Handler) GetUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusNotFound).SendString("User not found")
 	}
-	return c.JSON(user)
+	return c.JSON(fiber.Map{
+		"success": true,
+		"user":    user.User,
+	})
 }
 
 func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
@@ -37,7 +40,10 @@ func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
 		return c.Status(500).SendString(err.Error())
 	}
 
-	return c.JSON(users)
+	return c.JSON(fiber.Map{
+		"success": true,
+		"users":   users.User,
+	})
 }
 
 func (h *Handler) RegisterUser(c *fiber.Ctx) error {
@@ -47,7 +53,7 @@ func (h *Handler) RegisterUser(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Invalid input")
 	}
 
-	_, err = h.service.RegisterUser(c.Context(), &users.RegisterUserRequest{
+	user, err := h.service.RegisterUser(c.Context(), &users.RegisterUserRequest{
 		Sid:      u.Sid,
 		Name:     u.Name,
 		Surname:  u.Surname,
@@ -58,7 +64,10 @@ func (h *Handler) RegisterUser(c *fiber.Ctx) error {
 		return c.Status(500).SendString(err.Error())
 	}
 
-	return c.SendStatus(201)
+	return c.JSON(fiber.Map{
+		"success": true,
+		"user":    user.Id,
+	})
 }
 
 func (h *Handler) UpdateUser(c *fiber.Ctx) error {
@@ -82,16 +91,23 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusNotFound).SendString("User not found")
 	}
-	return c.JSON(user)
+	return c.JSON(fiber.Map{
+		"success": true,
+		"user":    user.User,
+	})
 }
 
 func (h *Handler) DeleteUser(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-	user, err := h.service.DeleteUser(c.Context(), &users.DeleteUserRequest{Id: idParam})
+	_, err := h.service.DeleteUser(c.Context(), &users.DeleteUserRequest{Id: idParam})
 	if err != nil {
 		return c.Status(http.StatusNotFound).SendString("User not found")
 	}
-	return c.JSON(user)
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"user":    "",
+	})
 }
 
 func (h *Handler) LoginUser(c *fiber.Ctx) error {
@@ -130,5 +146,8 @@ func (h *Handler) GetCurrentUser(c *fiber.Ctx) error {
 		return c.Status(http.StatusNotFound).SendString("User not found")
 	}
 
-	return c.JSON(user)
+	return c.JSON(fiber.Map{
+		"success": true,
+		"user":    user.User,
+	})
 }
