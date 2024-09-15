@@ -189,3 +189,18 @@ func (h *Handler) LoginUser(c context.Context, u *users.LoginRequest) (*users.Lo
 
 	return &users.LoginResponse{Token: token}, nil
 }
+
+func (h *Handler) CheckPassword(c context.Context, u *users.CheckPasswordRequest) (*users.CheckPasswordResponse, error) {
+	id, err := primitive.ObjectIDFromHex(u.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	var user model.User
+	err2 := h.db.FindOne(c, bson.M{"_id": id}).Decode(&user)
+	if err2 != nil {
+		return nil, err2
+	}
+
+	return &users.CheckPasswordResponse{IsPassword: checkPasswordHash(u.Password, user.Password)}, err
+}

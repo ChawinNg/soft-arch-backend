@@ -65,6 +65,7 @@ func main() {
 
 	// Define route
 	apiv1.Get("/users/me", mw.WithAuthentication(userHandler.GetCurrentUser))
+	apiv1.Post("/users/password", mw.WithAuthentication(userHandler.CheckPassword))
 	apiv1.Get("/users/:id", mw.WithAuthentication(userHandler.GetUser))
 	apiv1.Get("/users", mw.WithAuthentication(userHandler.GetAllUsers))
 	apiv1.Put("/users/:id", mw.WithAuthentication(userHandler.UpdateUser))

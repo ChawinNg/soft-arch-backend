@@ -151,3 +151,24 @@ func (h *Handler) GetCurrentUser(c *fiber.Ctx) error {
 		"user":    user.User,
 	})
 }
+
+func (h *Handler) CheckPassword(c *fiber.Ctx) error {
+	session := c.Locals("session").(model.Sessions)
+
+	u := &model.User{}
+	err := c.BodyParser(u)
+	if err != nil {
+		return c.Status(500).SendString("Invalid input")
+	}
+
+	is_same, err := h.service.CheckPassword(c.Context(), &users.CheckPasswordRequest{
+		Id:       session.UserId,
+		Password: u.Password,
+	})
+	if err != nil {
+		return c.Status(http.StatusNotFound).SendString("User not found")
+	}
+	return c.JSON(fiber.Map{
+		"is_password": is_same.IsPassword,
+	})
+}
