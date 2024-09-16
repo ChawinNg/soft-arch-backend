@@ -63,10 +63,14 @@ func (h *CourseHandler) GetCourse(c *fiber.Ctx) error {
 }
 
 func (h *CourseHandler) UpdateCourse(c *fiber.Ctx) error {
+	id := c.Params("id")
+
 	var course Course
 	if err := c.BodyParser(&course); err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
+
+	course.CourseID = id
 
 	if err := h.service.UpdateCourse(course); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error updating course")
