@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-    // db, err := sql.Open("mysql", os.Getenv("SQL_DB_DSN"))
-    db, err := sql.Open("mysql", "admin:root@tcp(localhost:3308)/root")
+    db, err := sql.Open("mysql", os.Getenv("SQL_DB_DSN"))
+    // db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/regdealer")
     if err != nil {
         log.Fatal(err)
     }

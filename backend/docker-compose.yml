@@ -4,20 +4,28 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: regdealer
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
     ports:
-      - "${MYSQL_PORT}:3306"
+      - "3333:3306"
     volumes:
       - mysql_volume:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost "]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - masato
+
   grpc-server:
     build: 
       context: .
       dockerfile: ./cmd/users/Dockerfile
     ports:
-      - "9000:9000" # Expose the gRPC server on port 9000
+      - "9999:9000" # Expose the gRPC server on port 9000
     container_name: grpc-server-container
     networks:
       - masato
@@ -30,9 +38,13 @@ services:
       - "8080:8080" # Expose the API gateway on port 8080
     container_name: gateway-container
     depends_on:
-      - grpc-server
+      mysql:
+        condition: service_healthy
+      grpc-server:
+        condition: service_started
     environment:
       - GRPC_SERVER_HOST=grpc-server:9000
+      - SQL_DB_DSN = root:root@tcp(mysql:3306)/regdealer
     networks:
       - masato
 
