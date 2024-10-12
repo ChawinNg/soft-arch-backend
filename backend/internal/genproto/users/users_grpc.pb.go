@@ -19,14 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetUser_FullMethodName        = "/users.UserService/GetUser"
-	UserService_GetAllUser_FullMethodName     = "/users.UserService/GetAllUser"
-	UserService_RegisterUser_FullMethodName   = "/users.UserService/RegisterUser"
-	UserService_LoginUser_FullMethodName      = "/users.UserService/LoginUser"
-	UserService_UpdateUser_FullMethodName     = "/users.UserService/UpdateUser"
-	UserService_DeleteUser_FullMethodName     = "/users.UserService/DeleteUser"
-	UserService_GetCurrentUser_FullMethodName = "/users.UserService/GetCurrentUser"
-	UserService_CheckPassword_FullMethodName  = "/users.UserService/checkPassword"
+	UserService_GetUser_FullMethodName           = "/users.UserService/GetUser"
+	UserService_GetAllUser_FullMethodName        = "/users.UserService/GetAllUser"
+	UserService_RegisterUser_FullMethodName      = "/users.UserService/RegisterUser"
+	UserService_LoginUser_FullMethodName         = "/users.UserService/LoginUser"
+	UserService_UpdateUser_FullMethodName        = "/users.UserService/UpdateUser"
+	UserService_DeleteUser_FullMethodName        = "/users.UserService/DeleteUser"
+	UserService_GetCurrentUser_FullMethodName    = "/users.UserService/GetCurrentUser"
+	UserService_CheckPassword_FullMethodName     = "/users.UserService/checkPassword"
+	UserService_ResetAllUserPoint_FullMethodName = "/users.UserService/ResetAllUserPoint"
+	UserService_ReduceUserPoint_FullMethodName   = "/users.UserService/ReduceUserPoint"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -43,6 +45,8 @@ type UserServiceClient interface {
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
 	CheckPassword(ctx context.Context, in *CheckPasswordRequest, opts ...grpc.CallOption) (*CheckPasswordResponse, error)
+	ResetAllUserPoint(ctx context.Context, in *ResetAllUserPointRequest, opts ...grpc.CallOption) (*ResetAllUserPointResponse, error)
+	ReduceUserPoint(ctx context.Context, in *ReduceUserPointRequest, opts ...grpc.CallOption) (*ReduceUserPointResponse, error)
 }
 
 type userServiceClient struct {
@@ -133,6 +137,26 @@ func (c *userServiceClient) CheckPassword(ctx context.Context, in *CheckPassword
 	return out, nil
 }
 
+func (c *userServiceClient) ResetAllUserPoint(ctx context.Context, in *ResetAllUserPointRequest, opts ...grpc.CallOption) (*ResetAllUserPointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetAllUserPointResponse)
+	err := c.cc.Invoke(ctx, UserService_ResetAllUserPoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ReduceUserPoint(ctx context.Context, in *ReduceUserPointRequest, opts ...grpc.CallOption) (*ReduceUserPointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReduceUserPointResponse)
+	err := c.cc.Invoke(ctx, UserService_ReduceUserPoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -147,6 +171,8 @@ type UserServiceServer interface {
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error)
 	CheckPassword(context.Context, *CheckPasswordRequest) (*CheckPasswordResponse, error)
+	ResetAllUserPoint(context.Context, *ResetAllUserPointRequest) (*ResetAllUserPointResponse, error)
+	ReduceUserPoint(context.Context, *ReduceUserPointRequest) (*ReduceUserPointResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -180,6 +206,12 @@ func (UnimplementedUserServiceServer) GetCurrentUser(context.Context, *GetCurren
 }
 func (UnimplementedUserServiceServer) CheckPassword(context.Context, *CheckPasswordRequest) (*CheckPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPassword not implemented")
+}
+func (UnimplementedUserServiceServer) ResetAllUserPoint(context.Context, *ResetAllUserPointRequest) (*ResetAllUserPointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetAllUserPoint not implemented")
+}
+func (UnimplementedUserServiceServer) ReduceUserPoint(context.Context, *ReduceUserPointRequest) (*ReduceUserPointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReduceUserPoint not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -346,6 +378,42 @@ func _UserService_CheckPassword_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ResetAllUserPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetAllUserPointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ResetAllUserPoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ResetAllUserPoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ResetAllUserPoint(ctx, req.(*ResetAllUserPointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ReduceUserPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReduceUserPointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReduceUserPoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReduceUserPoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReduceUserPoint(ctx, req.(*ReduceUserPointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -384,6 +452,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "checkPassword",
 			Handler:    _UserService_CheckPassword_Handler,
+		},
+		{
+			MethodName: "ResetAllUserPoint",
+			Handler:    _UserService_ResetAllUserPoint_Handler,
+		},
+		{
+			MethodName: "ReduceUserPoint",
+			Handler:    _UserService_ReduceUserPoint_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

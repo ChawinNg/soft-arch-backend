@@ -102,6 +102,7 @@ func (h *Handler) RegisterUser(c context.Context, u *users.RegisterUserRequest) 
 		"surname":  u.Surname,
 		"email":    u.Email,
 		"password": hashedPassword,
+		"points":   0,
 	}
 
 	user, err := h.db.InsertOne(c, reg_user)
@@ -203,4 +204,45 @@ func (h *Handler) CheckPassword(c context.Context, u *users.CheckPasswordRequest
 	}
 
 	return &users.CheckPasswordResponse{IsPassword: checkPasswordHash(u.Password, user.Password)}, err
+}
+
+func (h *Handler) ResetAllUserPoint(c context.Context, u *users.ResetAllUserPointRequest) (*users.ResetAllUserPointResponse, error) {
+	filter := bson.M{} // Empty filter matches all documents
+	update := bson.M{"$set": bson.M{"points": 40}}
+	result, err := h.db.UpdateMany(c, filter, update)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &users.ResetAllUserPointResponse{Count: result.ModifiedCount}, err
+}
+
+func (h *Handler) ReduceUserPoint(c context.Context, u *users.ReduceUserPointRequest) (*users.ReduceUserPointResponse, error) {
+	id, err := primitive.ObjectIDFromHex(u.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	var user model.User
+	err2 := h.db.FindOne(c, bson.M{"_id": id}).Decode(&user)
+	if err2 == mongo.ErrNoDocuments {
+		return nil, errors.New("user not found")
+	}
+
+	newPoints := user.Points - u.ReducePoint
+	log.Println(newPoints)
+	if newPoints < 0 {
+		return nil, errors.New("user does not have enough point")
+	}
+
+	filter := bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{"points": newPoints}}
+
+	_, err = h.db.UpdateOne(c, filter, update)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &users.ReduceUserPointResponse{RemainPoint: newPoints}, err
 }

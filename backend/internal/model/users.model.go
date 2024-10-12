@@ -15,6 +15,7 @@ type User struct {
 	Surname  string             `bson:"surname"`
 	Email    string             `bson:"email"`
 	Password string             `bson:"password"`
+	Points   int64              `bson:"points"`
 }
 
 func ConvertMongoToGrpc(user User) (*users.User, error) {
@@ -26,6 +27,7 @@ func ConvertMongoToGrpc(user User) (*users.User, error) {
 		Surname:  user.Surname,
 		Email:    user.Email,
 		Password: user.Password,
+		Points:   user.Points,
 	}, nil
 }
 
@@ -41,5 +43,6 @@ func ConvertGrpcToMongo(user *users.User) (*User, error) {
 		Surname:  user.Surname,
 		Email:    user.Email,
 		Password: user.Password,
+		Points:   user.Points,
 	}, nil
 }

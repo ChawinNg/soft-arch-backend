@@ -172,3 +172,50 @@ func (h *Handler) CheckPassword(c *fiber.Ctx) error {
 		"is_password": is_same.IsPassword,
 	})
 }
+
+func (h *Handler) ResetAllUserPoint(c *fiber.Ctx) error {
+	update_result, err := h.service.ResetAllUserPoint(c.Context(), &users.ResetAllUserPointRequest{})
+
+	if err != nil {
+		return c.Status(500).SendString("Cannot update user's points")
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"user":    update_result.Count,
+	})
+}
+
+func (h *Handler) GetCurrentUserPoint(c *fiber.Ctx) error {
+	session := c.Locals("session").(model.Sessions)
+	user, err := h.service.GetUser(c.Context(), &users.GetUserRequest{
+		Id: session.UserId,
+	})
+	if err != nil {
+		return c.Status(http.StatusNotFound).SendString("User not found")
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"points":  user.User.Points,
+	})
+}
+
+func (h *Handler) ReduceUserPoint(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	u := &model.User{}
+	err := c.BodyParser(u)
+	if err != nil {
+		return c.Status(500).SendString("Invalid input")
+	}
+
+	reduce_result, err := h.service.ReduceUserPoint(c.Context(), &users.ReduceUserPointRequest{Id: idParam, ReducePoint: u.Points})
+	if err != nil {
+		return c.Status(500).SendString(err.Error())
+	}
+
+	return c.JSON(fiber.Map{
+		"success":       true,
+		"remain_points": reduce_result.RemainPoint,
+	})
+}

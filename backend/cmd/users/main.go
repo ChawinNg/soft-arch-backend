@@ -35,7 +35,7 @@ func main() {
 
 	userService.RegisterUserServiceServer(grpcServer, userHandler)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", "9000"))
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", "9000"))
 	if err != nil {
 		panic(err)
 	}

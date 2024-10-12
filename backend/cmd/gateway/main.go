@@ -71,6 +71,10 @@ func main() {
 	apiv1.Put("/users/:id", mw.WithAuthentication(userHandler.UpdateUser))
 	apiv1.Delete("/users/:id", mw.WithAuthentication(userHandler.DeleteUser))
 
+	apiv1.Post("/points/reset", mw.WithAuthentication(userHandler.ResetAllUserPoint))
+	apiv1.Get("/points/me", mw.WithAuthentication(userHandler.GetCurrentUserPoint))
+	apiv1.Post("/points/:id", mw.WithAuthentication(userHandler.ReduceUserPoint))
+
 	apiv1.Post("/register", userHandler.RegisterUser)
 	apiv1.Post("/login", userHandler.LoginUser)
 
@@ -81,14 +85,14 @@ func main() {
 	apiv1.Put("/courses/:id", courseHandler.UpdateCourse)
 	apiv1.Delete("/courses/:id", courseHandler.DeleteCourse)
 
-    apiv1.Get("/sections", sectionHandler.GetAllSections)
-    apiv1.Get("/sections/courses/:id", sectionHandler.GetSectionsByCourseID)
-    apiv1.Get("/sections/:id", sectionHandler.GetSectionByID)
-    apiv1.Post("/sections", sectionHandler.CreateSection)
-    apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
-    apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
+	apiv1.Get("/sections", sectionHandler.GetAllSections)
+	apiv1.Get("/sections/courses/:id", sectionHandler.GetSectionsByCourseID)
+	apiv1.Get("/sections/:id", sectionHandler.GetSectionByID)
+	apiv1.Post("/sections", sectionHandler.CreateSection)
+	apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
+	apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
 
 	// Start the server
-	log.Fatal(app.Listen(":8080"))
+	log.Fatal(app.Listen("localhost:8080"))
 
 }
