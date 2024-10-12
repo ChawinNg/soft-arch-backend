@@ -96,6 +96,8 @@ func main() {
 	//instructors
 	apiv1.Post("/instructors", instructorHandler.CreateInstructor)
     apiv1.Put("/instructors/:id", instructorHandler.UpdateInstructor)
+	apiv1.Post("/instructors/contact", instructorHandler.SendEmail)
+
 
 	// Start the server
 	log.Fatal(app.Listen(":8080"))
