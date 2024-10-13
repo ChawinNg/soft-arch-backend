@@ -2,8 +2,11 @@ package instructors
 
 import (
 	"backend/internal/core/sections"
+	"backend/internal/model"
 	"database/sql"
 	"log"
+	"net/smtp"
+	"os"
 )
 
 type Instructor struct {
@@ -37,3 +40,31 @@ func (s *InstructorService) UpdateInstructor(instructor Instructor) error {
 	}
 	return nil
 }
+
+func (s *InstructorService) SendEmail(email model.Email) error {
+	auth := smtp.PlainAuth(
+		"",
+		os.Getenv("EMAIL"),
+		os.Getenv("GOOGLE_APP_PASSWORD"),
+		"smtp.gmail.com",
+	)
+
+	msg := "Subject: From: "+email.FromName+" Subject: "+email.Header+"\n"+email.Body
+
+	err := smtp.SendMail(
+		"smtp.gmail.com:587",
+		auth,
+		os.Getenv("EMAIL"),
+		[]string{email.ToEmail},
+		[]byte(msg),
+	)
+
+	if err != nil {
+		log.Println("Error sending email :", err)
+		return err
+	}
+	return nil
+
+}
+
+

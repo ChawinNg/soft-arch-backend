@@ -1,8 +1,8 @@
 package model
 
 type Email struct {
-	From   string `json:"from"`
-	To     string `json:"to"`
+	FromName   string `json:"from_name"`
+	ToEmail     string `json:"to_email"`
 	Header string `json:"header"`
 	Body   string `json:"body"`
 }

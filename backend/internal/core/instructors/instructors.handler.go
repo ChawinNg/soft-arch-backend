@@ -74,7 +74,12 @@ func (h *InstructorHandler) SendEmail(c *fiber.Ctx) error {
             "message": "Invalid request payload",
         })
     }
-
+    if err := h.service.SendEmail(email); err != nil {
+        return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+            "status":  "error",
+            "message": "Error sending email",
+        })
+    }
     return c.JSON(fiber.Map{
         "status":  "success",
         "message": email,
