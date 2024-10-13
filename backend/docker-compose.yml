@@ -12,12 +12,20 @@ services:
       - "${MYSQL_PORT}:3306"
     volumes:
       - mysql_volume:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost "]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - masato
+
   grpc-server:
     build: 
       context: .
       dockerfile: ./cmd/users/Dockerfile
     ports:
-      - "9000:9000" # Expose the gRPC server on port 9000
+      - "${GRPC_SERVER_PORT}:9000" # Expose the gRPC server on port 9000
     container_name: grpc-server-container
     networks:
       - masato
@@ -30,7 +38,10 @@ services:
       - "8080:8080" # Expose the API gateway on port 8080
     container_name: gateway-container
     depends_on:
-      - grpc-server
+      mysql:
+        condition: service_healthy
+      grpc-server:
+        condition: service_started
     environment:
       - GRPC_SERVER_HOST=grpc-server:9000
     networks:

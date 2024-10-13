@@ -7,6 +7,7 @@ import (
 
 	"backend/internal/core/courses"
 	"backend/internal/core/sections"
+	"backend/internal/core/instructors"
 	user "backend/internal/core/users/rest"
 	"backend/internal/database"
 	userService "backend/internal/genproto/users"
@@ -41,6 +42,7 @@ func main() {
 	// Connect to MySQL
 	sqlDSN := os.Getenv("SQL_DB_DSN")
 	dbSQL, err := sql.Open("mysql", sqlDSN)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,6 +59,9 @@ func main() {
 
 	courseService := courses.NewCourseService(dbSQL)
 	courseHandler := courses.NewCourseHandler(courseService, sectionService)
+
+	instructorService := instructors.NewInstructorService(dbSQL)
+	instructorHandler := instructors.NewInstructorHandler(instructorService)
 
 	//Define Middleware
 	secret := os.Getenv("JWT_SECRET")
@@ -91,6 +96,12 @@ func main() {
 	apiv1.Post("/sections", sectionHandler.CreateSection)
 	apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
 	apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
+
+	//instructors
+	apiv1.Post("/instructors", instructorHandler.CreateInstructor)
+    apiv1.Put("/instructors/:id", instructorHandler.UpdateInstructor)
+	apiv1.Post("/instructors/contact", instructorHandler.SendEmail)
+
 
 	// Start the server
 	log.Fatal(app.Listen("localhost:8080"))
