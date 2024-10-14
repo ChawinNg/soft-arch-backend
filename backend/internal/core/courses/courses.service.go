@@ -3,6 +3,7 @@ package courses
 import (
 	"database/sql"
 	"log"
+	"strings"
 )
 
 type CourseService struct {
@@ -96,4 +97,55 @@ func (s *CourseService) GetCoursesPaginated(offset, limit int) ([]Course, int, e
     }
 
     return courses, totalCourses, nil
+}
+
+func (s *CourseService) IndexCourses(params map[string]string) ([]Course, error) {
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString("SELECT id, description, course_name, course_full_name, course_type, grading_type, faculty, midterm_exam_date, final_exam_date, credit, course_group_id FROM courses WHERE 1=1")
+
+	var args []interface{}
+	for key, value := range params {
+		switch key {
+		case "id":
+			queryBuilder.WriteString(" AND id LIKE ?")
+			args = append(args, "%"+value+"%")
+		case "course_name":
+			queryBuilder.WriteString(" AND course_name LIKE ?")
+			args = append(args, "%"+value+"%")
+		case "faculty":
+			queryBuilder.WriteString(" AND faculty = ?")
+			args = append(args, value)
+		case "course_type":
+			queryBuilder.WriteString(" AND course_type = ?")
+			args = append(args, value)
+		case "grading_type":
+			queryBuilder.WriteString(" AND grading_type = ?")
+			args = append(args, value)
+		case "midterm_exam_date":
+			queryBuilder.WriteString(" AND midterm_exam_date = ?")
+			args = append(args, value)
+		case "final_exam_date":
+			queryBuilder.WriteString(" AND final_exam_date = ?")
+			args = append(args, value)
+		}
+	}
+
+	rows, err := s.db.Query(queryBuilder.String(), args...)
+	if err != nil {
+		log.Println("Error indexing courses:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var courses []Course
+	for rows.Next() {
+		var course Course
+		if err := rows.Scan(&course.CourseID, &course.Description, &course.CourseName, &course.CourseFullName, &course.CourseType, &course.GradingType, &course.Faculty, &course.MidtermExam, &course.FinalExam, &course.Credit, &course.CourseGroupID); err != nil {
+			log.Println("Error scanning course:", err)
+			return nil, err
+		}
+		courses = append(courses, course)
+	}
+
+	return courses, nil
 }

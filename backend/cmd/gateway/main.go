@@ -84,6 +84,7 @@ func main() {
 	apiv1.Post("/login", userHandler.LoginUser)
 
 	apiv1.Get("/courses", courseHandler.GetCourses)
+	apiv1.Get("/courses/search", courseHandler.IndexCourses)
 	apiv1.Get("/courses/paginated", courseHandler.GetCoursesPaginated)
 	apiv1.Get("/courses/:id", courseHandler.GetCourse)
 	apiv1.Post("/courses", courseHandler.CreateCourse)

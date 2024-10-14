@@ -2,6 +2,7 @@ package courses
 
 import (
 	"backend/internal/core/sections"
+	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -144,3 +145,76 @@ func (h *CourseHandler) GetCoursesPaginated(c *fiber.Ctx) error {
 		"courses":      coursesWithSections,
 	})
 }
+
+func (h *CourseHandler) IndexCourses(c *fiber.Ctx) error {
+	params := map[string]string{}
+
+	if id := c.Query("id"); id != "" {
+		params["id"] = id
+	}
+	if courseName := c.Query("course_name"); courseName != "" {
+		params["course_name"] = courseName
+	}
+	if faculty := c.Query("faculty"); faculty != "" {
+		params["faculty"] = faculty
+	}
+	if courseType := c.Query("course_type"); courseType != "" {
+		params["course_type"] = courseType
+	}
+	if gradingType := c.Query("grading_type"); gradingType != "" {
+		params["grading_type"] = gradingType
+	}
+	if midtermExamDate := c.Query("midterm_exam_date"); midtermExamDate != "" {
+		params["midterm_exam_date"] = midtermExamDate
+	}
+	if finalExamDate := c.Query("final_exam_date"); finalExamDate != "" {
+		params["final_exam_date"] = finalExamDate
+	}
+
+	courses, err := h.service.IndexCourses(params)
+	if err != nil {
+		log.Println("Error indexing courses:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error fetching courses",
+		})
+	}
+
+    var coursesWithSections []struct {
+		Course   Course         `json:"course"`
+		Sections []LocalSection `json:"sections"`
+	}
+
+	for _, course := range courses {
+		sections, err := h.sectionService.GetSectionsByCourseID(course.CourseID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving sections for course")
+		}
+
+		var localSections []LocalSection
+		for _, section := range sections {
+			localSections = append(localSections, LocalSection{
+				SectionID:   section.SectionID,
+				CourseID:    section.CourseID,
+				Section:     section.Section,
+				MaxCapacity: section.MaxCapacity,
+				Capacity:    section.Capacity,
+				Room:        section.Room,
+				Timeslots:   section.Timeslots,
+				Instructors: section.Instructors,
+			})
+		}
+
+		coursesWithSections = append(coursesWithSections, struct {
+			Course   Course         `json:"course"`
+			Sections []LocalSection `json:"sections"`
+		}{
+			Course:   course,
+			Sections: localSections,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"courses":      coursesWithSections,
+	})
+}
+
