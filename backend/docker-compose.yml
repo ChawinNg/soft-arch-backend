@@ -36,6 +36,15 @@ services:
     networks:
       - masato
 
+  rabbitmq:
+    image: rabbitmq:3.11-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: root
+      RABBITMQ_DEFAULT_PASS: root
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
 volumes:
   mongo_volume:
   mysql_volume:
