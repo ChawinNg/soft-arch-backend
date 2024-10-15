@@ -15,8 +15,8 @@ func NewEnrollmentService(db *sql.DB) *EnrollmentService {
 	}
 }
 
-func (e *EnrollmentService) GetUserEnrollment(user_id int) ([]Enrollment, error) {
-	rows, err := e.db.Query("SELECT id, user_id, course_id, section_id, section, point, round FROM enrollments WHERE user_id = ?", user_id)
+func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, error) {
+	rows, err := e.db.Query("SELECT id, user_id, course_id, section_id, section, points, round FROM enrollments WHERE user_id = ?", user_id)
 	if err != nil {
 		log.Println("Error fetching Enrollments:", err)
 		return nil, err
@@ -37,8 +37,8 @@ func (e *EnrollmentService) GetUserEnrollment(user_id int) ([]Enrollment, error)
 	return enrollments, nil
 }
 
-func (e *EnrollmentService) GetCourseEnrollment(course_id int) ([]Enrollment, error) {
-	rows, err := e.db.Query("SELECT id, user_id, course_id, section_id, section, point, round FROM enrollments WHERE course_id = ?", course_id)
+func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment, error) {
+	rows, err := e.db.Query("SELECT id, user_id, course_id, section_id, section, points, round FROM enrollments WHERE course_id = ?", course_id)
 	if err != nil {
 		log.Println("Error fetching Enrollments:", err)
 		return nil, err
@@ -60,8 +60,8 @@ func (e *EnrollmentService) GetCourseEnrollment(course_id int) ([]Enrollment, er
 }
 
 func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) error {
-	_, err := e.db.Exec("INSERT INTO enrollments(id, user_id, course_id, section_id, section, point, round) VALUES (?, ?, ?, ?, ?, ?, ?)",
-		enrollment.EnrollmentID, enrollment.UserID, enrollment.CourseID, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round)
+	_, err := e.db.Exec("INSERT INTO enrollments(user_id, course_id, section_id, section, points, round) VALUES ( ?, ?, ?, ?, ?, ?)",
+		enrollment.UserID, enrollment.CourseID, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round)
 	if err != nil {
 		log.Println("Error creating enrollment:", err)
 		return err
@@ -90,7 +90,7 @@ func (e *EnrollmentService) DeleteEnrollment(id string) error {
 	return nil
 }
 
-func (e *EnrollmentService) SummarizePoints(user_id int) (int64, error) {
+func (e *EnrollmentService) SummarizePoints(user_id string) (int64, error) {
 	var totalPoints int64
 	totalPoints = 0
 

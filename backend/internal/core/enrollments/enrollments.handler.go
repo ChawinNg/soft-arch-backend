@@ -2,7 +2,6 @@ package enrollments
 
 import (
 	"net/http"
-	"strconv"
 
 	userService "backend/internal/genproto/users"
 
@@ -19,13 +18,7 @@ func NewEnrollmentHandler(service *EnrollmentService, userService userService.Us
 }
 
 func (h *EnrollmentHandler) GetUserEnrollment(c *fiber.Ctx) error {
-	user_id, err := strconv.Atoi(c.Params("user_id"))
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid user ID",
-		})
-	}
+	user_id := c.Params("user_id")
 
 	enrollments, err := h.service.GetUserEnrollment(user_id)
 	if err != nil {
@@ -42,13 +35,7 @@ func (h *EnrollmentHandler) GetUserEnrollment(c *fiber.Ctx) error {
 }
 
 func (h *EnrollmentHandler) GetCourseEnrollment(c *fiber.Ctx) error {
-	course_id, err := strconv.Atoi(c.Params("course_id"))
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid course ID",
-		})
-	}
+	course_id := c.Params("course_id")
 
 	enrollments, err := h.service.GetUserEnrollment(course_id)
 	if err != nil {
@@ -89,13 +76,8 @@ func (h *EnrollmentHandler) CreateEnrollment(c *fiber.Ctx) error {
 }
 
 func (h *EnrollmentHandler) EditEnrollment(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid enrollment ID",
-		})
-	}
+	id := c.Params("id")
+
 	var enrollment Enrollment
 	if err := c.BodyParser(&enrollment); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
@@ -131,16 +113,9 @@ func (h *EnrollmentHandler) DeleteEnrollment(c *fiber.Ctx) error {
 }
 
 func (h *EnrollmentHandler) SummarizeUserEnrollmentResult(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("user_id"))
+	user_id := c.Params("user_id")
 
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid user ID",
-		})
-	}
-
-	enrollments, err := h.service.GetUserEnrollment(id)
+	enrollments, err := h.service.GetUserEnrollment(user_id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -148,7 +123,7 @@ func (h *EnrollmentHandler) SummarizeUserEnrollmentResult(c *fiber.Ctx) error {
 		})
 	}
 
-	points, err := h.service.SummarizePoints(id)
+	points, err := h.service.SummarizePoints(user_id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -157,8 +132,7 @@ func (h *EnrollmentHandler) SummarizeUserEnrollmentResult(c *fiber.Ctx) error {
 	}
 
 	for _, enrollment := range enrollments {
-		enrollmentID := strconv.Itoa(enrollment.EnrollmentID)
-		if err := h.service.DeleteEnrollment(enrollmentID); err != nil {
+		if err := h.service.DeleteEnrollment(enrollment.EnrollmentID); err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Error deleting enrollment",
