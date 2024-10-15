@@ -6,8 +6,9 @@ import (
 	"os"
 
 	"backend/internal/core/courses"
-	"backend/internal/core/sections"
+	"backend/internal/core/enrollments"
 	"backend/internal/core/instructors"
+	"backend/internal/core/sections"
 	user "backend/internal/core/users/rest"
 	"backend/internal/database"
 	userService "backend/internal/genproto/users"
@@ -26,12 +27,12 @@ func main() {
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
-        AllowOrigins: "http://localhost:3000", // Specify the allowed origin(s)
-        AllowMethods: "GET,POST,PUT,DELETE",    // Specify allowed methods
-        AllowHeaders: "Content-Type, Authorization", // Specify allowed headers
+		AllowOrigins:     "http://localhost:3000",       // Specify the allowed origin(s)
+		AllowMethods:     "GET,POST,PUT,DELETE",         // Specify allowed methods
+		AllowHeaders:     "Content-Type, Authorization", // Specify allowed headers
 		AllowCredentials: true,
-    }))
-	
+	}))
+
 	// gRPC Client
 	grpc_host := os.Getenv("GRPC_SERVER_HOST")
 	conn, err := grpc.NewClient(grpc_host, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -55,10 +56,13 @@ func main() {
 	userHandler := user.NewHandler(userConn)
 
 	sectionService := sections.NewSectionService(dbSQL)
-    sectionHandler := sections.NewSectionHandler(sectionService)
+	sectionHandler := sections.NewSectionHandler(sectionService)
 
 	courseService := courses.NewCourseService(dbSQL)
 	courseHandler := courses.NewCourseHandler(courseService, sectionService)
+
+	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
+	enrollmentHandler := enrollments.NewEnrollmentHandler(enrollmentService, userConn)
 
 	instructorService := instructors.NewInstructorService(dbSQL)
 	instructorHandler := instructors.NewInstructorHandler(instructorService)
@@ -98,11 +102,17 @@ func main() {
 	apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
 	apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
 
+	apiv1.Get("/enrollments/:user_id", enrollmentHandler.GetUserEnrollment)
+	apiv1.Get("/enrollments/:course_id", enrollmentHandler.GetCourseEnrollment)
+	apiv1.Post("/enrollments", enrollmentHandler.CreateEnrollment)
+	apiv1.Put("/enrollments/:id", enrollmentHandler.EditEnrollment)
+	apiv1.Delete("/enrollments/:id", enrollmentHandler.DeleteEnrollment)
+	apiv1.Delete("/enrollments/summarize/:user_id", enrollmentHandler.SummarizeUserEnrollmentResult)
+
 	//instructors
 	apiv1.Post("/instructors", instructorHandler.CreateInstructor)
-    apiv1.Put("/instructors/:id", instructorHandler.UpdateInstructor)
+	apiv1.Put("/instructors/:id", instructorHandler.UpdateInstructor)
 	apiv1.Post("/instructors/contact", instructorHandler.SendEmail)
-
 
 	// Start the server
 	log.Fatal(app.Listen("localhost:8080"))
