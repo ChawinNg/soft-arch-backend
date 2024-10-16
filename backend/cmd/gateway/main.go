@@ -86,6 +86,7 @@ func main() {
 
 	apiv1.Post("/register", userHandler.RegisterUser)
 	apiv1.Post("/login", userHandler.LoginUser)
+	apiv1.Get("/logout", mw.WithAuthentication(userHandler.LogoutUser))
 
 	apiv1.Get("/courses", courseHandler.GetCourses)
 	apiv1.Get("/courses/search", courseHandler.IndexCourses)
