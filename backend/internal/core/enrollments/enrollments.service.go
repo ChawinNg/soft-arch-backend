@@ -59,15 +59,21 @@ func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment,
 	return enrollments, nil
 }
 
-func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) error {
-	_, err := e.db.Exec("INSERT INTO enrollments(user_id, course_id, section_id, section, points, round) VALUES ( ?, ?, ?, ?, ?, ?)",
+func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) (int64, error) {
+	result, err := e.db.Exec("INSERT INTO enrollments(user_id, course_id, section_id, section, points, round) VALUES ( ?, ?, ?, ?, ?, ?)",
 		enrollment.UserID, enrollment.CourseID, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round)
 	if err != nil {
 		log.Println("Error creating enrollment:", err)
-		return err
+		return 0, err
 	}
 
-	return nil
+	id, err := result.LastInsertId()
+	if err != nil {
+		log.Println("Error fetching last insert ID:", err)
+		return 0, err
+	}
+
+	return id, err
 }
 
 func (e *EnrollmentService) EditEnrollment(enrollment Enrollment) error {

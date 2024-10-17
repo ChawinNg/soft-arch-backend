@@ -60,7 +60,7 @@ func (h *EnrollmentHandler) CreateEnrollment(c *fiber.Ctx) error {
 		})
 	}
 
-	err := h.service.CreateEnrollment(enrollment)
+	id, err := h.service.CreateEnrollment(enrollment)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -71,6 +71,7 @@ func (h *EnrollmentHandler) CreateEnrollment(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status":  "created",
 		"message": "Enrollment created successfully",
+		"id":      id,
 	})
 
 }
