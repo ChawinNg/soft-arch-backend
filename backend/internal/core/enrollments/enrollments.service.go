@@ -16,7 +16,11 @@ func NewEnrollmentService(db *sql.DB) *EnrollmentService {
 }
 
 func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, error) {
-	rows, err := e.db.Query("SELECT id, user_id, course_id, section_id, section, points, round FROM enrollments WHERE user_id = ?", user_id)
+	rows, err := e.db.Query(`
+    SELECT e.id, e.user_id, e.course_id, c.course_name, c.course_credit, e.section_id, e.section, e.points, e.round
+    FROM enrollments e
+    JOIN courses c ON e.course_id = c.id
+    WHERE e.user_id = ?`, user_id)
 	if err != nil {
 		log.Println("Error fetching Enrollments:", err)
 		return nil, err
@@ -27,7 +31,7 @@ func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, err
 
 	for rows.Next() {
 		var enrollment Enrollment
-		if err := rows.Scan(&enrollment.EnrollmentID, &enrollment.UserID, &enrollment.CourseID, &enrollment.SectionID, &enrollment.Section, &enrollment.Points, &enrollment.Round); err != nil {
+		if err := rows.Scan(&enrollment.EnrollmentID, &enrollment.UserID, &enrollment.CourseID, &enrollment.CourseName, &enrollment.CourseCredit, &enrollment.SectionID, &enrollment.Section, &enrollment.Points, &enrollment.Round); err != nil {
 			log.Println("Error scanning Enrollments:", err)
 			return nil, err
 		}
@@ -38,7 +42,11 @@ func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, err
 }
 
 func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment, error) {
-	rows, err := e.db.Query("SELECT id, user_id, course_id, section_id, section, points, round FROM enrollments WHERE course_id = ?", course_id)
+	rows, err := e.db.Query(`
+	SELECT e.id, e.user_id, e.course_id,  c.course_name, c.course_credit, e.section_id, e.section, e.points, e.round
+	FROM enrollments e
+	JOIN courses c ON e.course_id = c.id
+	WHERE e.course_id = ?`, course_id)
 	if err != nil {
 		log.Println("Error fetching Enrollments:", err)
 		return nil, err
@@ -49,7 +57,7 @@ func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment,
 
 	for rows.Next() {
 		var enrollment Enrollment
-		if err := rows.Scan(&enrollment.EnrollmentID, &enrollment.UserID, &enrollment.CourseID, &enrollment.SectionID, &enrollment.Section, &enrollment.Points, &enrollment.Round); err != nil {
+		if err := rows.Scan(&enrollment.EnrollmentID, &enrollment.UserID, &enrollment.CourseID, &enrollment.CourseName, &enrollment.CourseCredit, &enrollment.SectionID, &enrollment.Section, &enrollment.Points, &enrollment.Round); err != nil {
 			log.Println("Error scanning Enrollments:", err)
 			return nil, err
 		}
@@ -60,8 +68,8 @@ func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment,
 }
 
 func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) error {
-	_, err := e.db.Exec("INSERT INTO enrollments(user_id, course_id, section_id, section, points, round) VALUES ( ?, ?, ?, ?, ?, ?)",
-		enrollment.UserID, enrollment.CourseID, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round)
+	_, err := e.db.Exec("INSERT INTO enrollments(user_id, course_id, course_name, course_credit, section_id, section, points, round) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?)",
+		enrollment.UserID, enrollment.CourseID, enrollment.CourseName, enrollment.CourseCredit, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round)
 	if err != nil {
 		log.Println("Error creating enrollment:", err)
 		return err
@@ -71,8 +79,8 @@ func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) error {
 }
 
 func (e *EnrollmentService) EditEnrollment(enrollment Enrollment) error {
-	_, err := e.db.Exec("UPDATE enrollments SET user_id = ?, course_id = ?, section_id = ?, section = ?, points = ?, round = ? WHERE id = ?",
-		enrollment.UserID, enrollment.CourseID, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round, enrollment.EnrollmentID)
+	_, err := e.db.Exec("UPDATE enrollments SET user_id = ?, course_id = ?, course_name = ?, course_credit = ?, section_id = ?, section = ?, points = ?, round = ? WHERE id = ?",
+		enrollment.UserID, enrollment.CourseID, enrollment.CourseName, enrollment.CourseCredit, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round, enrollment.EnrollmentID)
 	if err != nil {
 		log.Println("Error updating enrollment:", err)
 		return err
