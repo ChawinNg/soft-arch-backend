@@ -2,11 +2,51 @@ package enrollments
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+
+	"github.com/streadway/amqp"
 )
 
 type EnrollmentService struct {
 	db *sql.DB
+}
+
+func connectRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
+	conn, err := amqp.Dial("amqp://root:root@localhost:5672/")
+	if err != nil {
+		return nil, nil, err
+	}
+	ch, err := conn.Channel()
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, ch, nil
+}
+
+func sendMessage(ch *amqp.Channel, queueName, message string) error {
+	_, err := ch.QueueDeclare(
+		queueName, // name
+		false,     // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
+	)
+	if err != nil {
+		return err
+	}
+
+	err = ch.Publish(
+		"",        // exchange
+		queueName, // routing key
+		false,     // mandatory
+		false,     // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(message),
+		})
+	return err
 }
 
 func NewEnrollmentService(db *sql.DB) *EnrollmentService {
@@ -38,6 +78,21 @@ func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, err
 		enrollments = append(enrollments, enrollment)
 	}
 
+	conn, ch, err := connectRabbitMQ()
+	if err != nil {
+		log.Println("Failed to connect to RabbitMQ:", err)
+		return enrollments, err
+	}
+	defer conn.Close()
+	defer ch.Close()
+
+	message := fmt.Sprintf("Enrollments for user %s were retrieved", user_id)
+	if err := sendMessage(ch, "enrollment", message); err != nil {
+		log.Println("Failed to send RabbitMQ message:", err)
+	} else {
+		log.Printf("[X] Sent %s\n", message)
+	}
+
 	return enrollments, nil
 }
 
@@ -62,6 +117,21 @@ func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment,
 			return nil, err
 		}
 		enrollments = append(enrollments, enrollment)
+	}
+
+	conn, ch, err := connectRabbitMQ()
+	if err != nil {
+		log.Println("Failed to connect to RabbitMQ:", err)
+		return enrollments, nil
+	}
+	defer conn.Close()
+	defer ch.Close()
+
+	message := fmt.Sprintf("Course enrollments retrieved for course_id: %s, Enrollments: %v", course_id, enrollments)
+	if err := sendMessage(ch, "enrollment", message); err != nil {
+		log.Println("Failed to send RabbitMQ message:", err)
+	} else {
+		log.Printf("[X] Sent %s\n", message)
 	}
 
 	return enrollments, nil
@@ -89,7 +159,22 @@ func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) (int64, erro
 		return 0, err
 	}
 
-	return id, err
+	conn, ch, err := connectRabbitMQ()
+	if err != nil {
+		log.Println("Failed to connect to RabbitMQ:", err)
+		return 0, err
+	}
+	defer conn.Close()
+	defer ch.Close()
+
+	message := fmt.Sprintf("New enrollment created: %v", enrollment)
+	if err := sendMessage(ch, "enrollment", message); err != nil {
+		log.Println("Failed to send RabbitMQ message:", err)
+	} else {
+		log.Printf("[X] Sent %s\n", message)
+	}
+
+	return id, nil
 }
 
 func (e *EnrollmentService) EditEnrollment(enrollment Enrollment) error {
@@ -98,6 +183,21 @@ func (e *EnrollmentService) EditEnrollment(enrollment Enrollment) error {
 	if err != nil {
 		log.Println("Error updating enrollment:", err)
 		return err
+	}
+
+	conn, ch, err := connectRabbitMQ()
+	if err != nil {
+		log.Println("Failed to connect to RabbitMQ:", err)
+		return nil
+	}
+	defer conn.Close()
+	defer ch.Close()
+
+	message := fmt.Sprintf("Enrollment updated: %v", enrollment)
+	if err := sendMessage(ch, "enrollment", message); err != nil {
+		log.Println("Failed to send RabbitMQ message:", err)
+	} else {
+		log.Printf("[X] Sent %s\n", message)
 	}
 
 	return nil
@@ -109,21 +209,50 @@ func (e *EnrollmentService) DeleteEnrollment(id string) error {
 		log.Println("Error deleting enrollment:", err)
 		return err
 	}
+
+	conn, ch, err := connectRabbitMQ()
+	if err != nil {
+		log.Println("Failed to connect to RabbitMQ:", err)
+		return nil
+	}
+	defer conn.Close()
+	defer ch.Close()
+
+	message := fmt.Sprintf("Enrollment deleted: %v", id)
+	if err := sendMessage(ch, "enrollment", message); err != nil {
+		log.Println("Failed to send RabbitMQ message:", err)
+	} else {
+		log.Printf("[X] Sent %s\n", message)
+	}
+
 	return nil
 }
 
 func (e *EnrollmentService) SummarizePoints(user_id string) (int64, error) {
 	var totalPoints int64
-	totalPoints = 0
 
-	enrollments, err := e.GetUserEnrollment(user_id)
+	err := e.db.QueryRow(`
+        SELECT COALESCE(SUM(points), 0) 
+        FROM enrollments 
+        WHERE user_id = ?`, user_id).Scan(&totalPoints)
 	if err != nil {
-		log.Println("Error fetching Enrollments:", err)
+		log.Println("Error summarizing points:", err)
 		return 0, err
 	}
 
-	for _, enrollment := range enrollments {
-		totalPoints += enrollment.Points
+	conn, ch, err := connectRabbitMQ()
+	if err != nil {
+		log.Println("Failed to connect to RabbitMQ:", err)
+		return 0, err
+	}
+	defer conn.Close()
+	defer ch.Close()
+
+	message := fmt.Sprintf("User %s use total points: %d", user_id, totalPoints)
+	if err := sendMessage(ch, "enrollment", message); err != nil {
+		log.Println("Failed to send RabbitMQ message:", err)
+	} else {
+		log.Printf("[X] Sent %s\n", message)
 	}
 
 	return totalPoints, nil
