@@ -103,8 +103,8 @@ func main() {
 	apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
 	apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
 
-	apiv1.Get("/enrollments/:user_id", enrollmentHandler.GetUserEnrollment)
-	apiv1.Get("/enrollments/:course_id", enrollmentHandler.GetCourseEnrollment)
+	apiv1.Get("/enrollments/user/:user_id", enrollmentHandler.GetUserEnrollment)
+	apiv1.Get("/enrollments/course/:course_id", enrollmentHandler.GetCourseEnrollment)
 	apiv1.Post("/enrollments", enrollmentHandler.CreateEnrollment)
 	apiv1.Put("/enrollments/:id", enrollmentHandler.EditEnrollment)
 	apiv1.Delete("/enrollments/:id", enrollmentHandler.DeleteEnrollment)

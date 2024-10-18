@@ -37,13 +37,22 @@ func (h *EnrollmentHandler) GetUserEnrollment(c *fiber.Ctx) error {
 func (h *EnrollmentHandler) GetCourseEnrollment(c *fiber.Ctx) error {
 	course_id := c.Params("course_id")
 
-	enrollments, err := h.service.GetUserEnrollment(course_id)
+	enrollments, err := h.service.GetCourseEnrollment(course_id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Error fetching Enrollments",
 		})
 	}
+
+	if len(enrollments) == 0 {
+		return c.Status(http.StatusNotFound).JSON(fiber.Map{
+			"status":  "success",
+			"message": "No enrollments found for this course.",
+			"data":    enrollments,
+		})
+	}
+
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Enrollments retrieved successfully",

@@ -17,7 +17,7 @@ func NewEnrollmentService(db *sql.DB) *EnrollmentService {
 
 func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, error) {
 	rows, err := e.db.Query(`
-    SELECT e.id, e.user_id, e.course_id, c.course_name, c.course_credit, e.section_id, e.section, e.points, e.round
+    SELECT e.id, e.user_id, e.course_id, c.course_name, c.credit, e.section_id, e.section, e.points, e.round
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
     WHERE e.user_id = ?`, user_id)
@@ -43,7 +43,7 @@ func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, err
 
 func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment, error) {
 	rows, err := e.db.Query(`
-	SELECT e.id, e.user_id, e.course_id,  c.course_name, c.course_credit, e.section_id, e.section, e.points, e.round
+	SELECT e.id, e.user_id, e.course_id, c.course_name, c.credit, e.section_id, e.section, e.points, e.round
 	FROM enrollments e
 	JOIN courses c ON e.course_id = c.id
 	WHERE e.course_id = ?`, course_id)
@@ -68,8 +68,16 @@ func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment,
 }
 
 func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) (int64, error) {
-	result, err := e.db.Exec("INSERT INTO enrollments(user_id, course_id, course_name, course_credit, section_id, section, points, round) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?)",
-		enrollment.UserID, enrollment.CourseID, enrollment.CourseName, enrollment.CourseCredit, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round)
+	var courseName string
+	var courseCredit int
+	err := e.db.QueryRow("SELECT course_name, credit FROM courses WHERE id = ?", enrollment.CourseID).Scan(&courseName, &courseCredit)
+	if err != nil {
+		log.Println("Error fetching course info:", err)
+		return 0, err
+	}
+
+	result, err := e.db.Exec("INSERT INTO enrollments(user_id, course_id, course_name, course_credit, section_id, section, points, round) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		enrollment.UserID, enrollment.CourseID, courseName, courseCredit, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round)
 	if err != nil {
 		log.Println("Error creating enrollment:", err)
 		return 0, err
@@ -85,8 +93,8 @@ func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) (int64, erro
 }
 
 func (e *EnrollmentService) EditEnrollment(enrollment Enrollment) error {
-	_, err := e.db.Exec("UPDATE enrollments SET user_id = ?, course_id = ?, course_name = ?, course_credit = ?, section_id = ?, section = ?, points = ?, round = ? WHERE id = ?",
-		enrollment.UserID, enrollment.CourseID, enrollment.CourseName, enrollment.CourseCredit, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round, enrollment.EnrollmentID)
+	_, err := e.db.Exec("UPDATE enrollments SET user_id = ?, course_id = ?, section_id = ?, section = ?, points = ?, round = ? WHERE id = ?",
+		enrollment.UserID, enrollment.CourseID, enrollment.SectionID, enrollment.Section, enrollment.Points, enrollment.Round, enrollment.EnrollmentID)
 	if err != nil {
 		log.Println("Error updating enrollment:", err)
 		return err
