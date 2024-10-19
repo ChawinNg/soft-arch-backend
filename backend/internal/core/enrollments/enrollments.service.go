@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/streadway/amqp"
 )
@@ -13,7 +14,8 @@ type EnrollmentService struct {
 }
 
 func connectRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
-	conn, err := amqp.Dial("amqp://root:root@localhost:5672/")
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/",os.Getenv("RABBITMQ_HOST")))
+
 	if err != nil {
 		return nil, nil, err
 	}

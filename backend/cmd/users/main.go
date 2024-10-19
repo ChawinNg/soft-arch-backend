@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"log"
 	"net"
 	"os"
@@ -35,7 +35,8 @@ func main() {
 
 	userService.RegisterUserServiceServer(grpcServer, userHandler)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", "9000"))
+	lis, err := net.Listen("tcp", os.Getenv("GRPC_SERVER_HOST"))
+
 	if err != nil {
 		panic(err)
 	}

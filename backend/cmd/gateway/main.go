@@ -116,6 +116,5 @@ func main() {
 	apiv1.Post("/instructors/contact", instructorHandler.SendEmail)
 
 	// Start the server
-	log.Fatal(app.Listen("localhost:8080"))
-
+	log.Fatal(app.Listen(os.Getenv("BACKEND_REST")))
 }
