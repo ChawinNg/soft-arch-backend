@@ -19,7 +19,7 @@ type EnrollmentSummary struct {
 	MaxCapacity  int    `json:"max_capacity"`
 	SectionID    int    `json:"section_id"`
 	Section      int    `json:"section"`
-	Round        int    `json:"round"`
+	Round        string    `json:"round"`
 	Points       int    `json:"points"`
 	Capacity     int    `json:"capacity"`
 }
