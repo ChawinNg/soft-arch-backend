@@ -3,6 +3,7 @@ package enrollments
 import (
 	"database/sql"
 	"log"
+	"backend/internal/core/sections"
 )
 
 type EnrollmentService struct {
@@ -128,16 +129,79 @@ func (e *EnrollmentService) SummarizePoints(user_id string) (int64, error) {
 	return totalPoints, nil
 }
 
-// func (e *EnrollmentService) SummarizeCourseEnrollmentResult(course_id int) error {
-// 	enrollments, err := e.GetCourseEnrollment(course_id)
-// 	if err != nil {
-// 		log.Println("Error fetching Enrollments:", err)
-// 		return err
-// 	}
+func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]EnrollmentSummary,[]sections.Section,error) {
+	query := `
+		SELECT  e.user_id, e.course_id, e.course_name,e.course_credit,s.max_capacity,s.id, e.section,e.round, e.points,s.capacity
+		FROM enrollments e
+		WHERE e.round = ?
+		INNER JOIN sections s ON e.section_id = s.id
+		ORDER BY e.course_id, e.section, e.points DESC
+	`
+	rows, err := s.db.Query(query, round)
+	if err != nil {
+		log.Println("failed to query enrollments: %v", err)
+		return nil,nil, err
+	}
+	defer rows.Close()
 
-// 	for _, enrollment := range enrollments {
 
-// 	}
 
-// 	return nil
-// }
+	var enrollments []EnrollmentSummary
+	var SectionToUpdates []sections.Section
+
+	var prevCourseID  string
+	var availableCapacity,prevSectionID,prevSection,prevMaxCapa int
+	prevSection = 0
+	for rows.Next() {
+		var enrollment EnrollmentSummary
+		if err := rows.Scan(
+			&enrollment.UserID, &enrollment.CourseID, &enrollment.CourseName, &enrollment.CourseCredit,
+			&enrollment.MaxCapacity, &enrollment.SectionID, &enrollment.Section,
+			&enrollment.Round, &enrollment.Points, &enrollment.Capacity); err != nil {
+			log.Println("Error scanning enrollments:", err)
+			return nil,nil, err
+		}
+
+		// if first row
+		if prevCourseID == "" && prevSection == 0 && enrollment.MaxCapacity-enrollment.Capacity > 0 {
+			prevCourseID = enrollment.CourseID
+			prevSection = enrollment.Section
+			prevSectionID =  enrollment.SectionID
+			prevMaxCapa = enrollment.MaxCapacity
+			availableCapacity = enrollment.MaxCapacity - enrollment.Capacity - 1
+			enrollments = append(enrollments, enrollment)
+			continue
+		}
+
+		// diff course or diff section or max cap
+		if enrollment.CourseID != prevCourseID || enrollment.Section != prevSection || availableCapacity == 0 {
+			//add section to update
+			var SectionToUpdate sections.Section
+			SectionToUpdate.CourseID = prevCourseID
+			SectionToUpdate.Section = enrollment.Section
+			SectionToUpdate.MaxCapacity = prevMaxCapa
+			SectionToUpdate.Capacity = availableCapacity
+			SectionToUpdate.SectionID = prevSectionID
+			SectionToUpdates = append(SectionToUpdates, SectionToUpdate)
+			//set info of the new one
+			prevCourseID = enrollment.CourseID
+			prevSection = enrollment.Section
+			prevSectionID =  enrollment.SectionID
+			prevMaxCapa = enrollment.MaxCapacity
+			availableCapacity = enrollment.MaxCapacity - enrollment.Capacity - 1
+			enrollments = append(enrollments, enrollment)
+			continue
+		}
+
+		enrollments = append(enrollments, enrollment)
+		availableCapacity--
+
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Println("Error during rows iteration:", err)
+		return nil,nil,err
+	}
+
+	return enrollments,SectionToUpdates,nil
+}
