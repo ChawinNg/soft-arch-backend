@@ -1,1 +1,1 @@
-INSERT INTO enrollments (id, user_id, course_id, course_name, course_credit, section_id, section, points, round) VALUES
+-- INSERT INTO enrollment_results (id, user_id, course_id, course_name, course_credit, section_id, section, round) VALUES;

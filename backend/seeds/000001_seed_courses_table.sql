@@ -58,4 +58,25 @@ INSERT INTO courses (id, description, course_name, course_full_name, course_type
     'Letter Grade',
     'Engineering',
     3
-);
+),
+('SCI101', 'Introduction to basic concepts of physics and chemistry.', 'Intro to Science', 'Introduction to Science', 'Core', 'Letter Grade', 'Science', 3),
+('ART102', 'Study of Western art history from the Renaissance to modern times.', 'Western Art History', 'History of Western Art', 'Core', 'S/U', 'Arts', 3),
+('MED103', 'Basic principles of anatomy and physiology.', 'Human Anatomy', 'Anatomy and Physiology', 'Core', 'Letter Grade', 'Medicine', 4),
+('LAW104', 'Introduction to criminal law and its applications.', 'Criminal Law', 'Introduction to Criminal Law', 'Core', 'Letter Grade', 'Law', 3),
+('AHS105', 'Study of medical technologies and health systems.', 'Medical Technologies', 'Health and Medical Technologies', 'Elective', 'S/U', 'Allied Health Science', 3),
+('ARC106', 'Fundamentals of architectural design.', 'Architecture Design I', 'Introduction to Architecture Design', 'Core', 'Letter Grade', 'Architecture', 4),
+('COM107', 'Fundamentals of financial accounting.', 'Financial Accounting', 'Introduction to Financial Accounting', 'Core', 'Letter Grade', 'Commerce and Accountancy', 3),
+('COMA108', 'Introduction to broadcasting and journalism.', 'Media and Journalism', 'Broadcasting and Media Studies', 'Elective', 'S/U', 'Communication Arts', 3),
+('DEN109', 'Study of basic dental practices and procedures.', 'Intro to Dentistry', 'Fundamentals of Dentistry', 'Core', 'Letter Grade', 'Dentistry', 4),
+('ECO110', 'Principles of micro and macroeconomics.', 'Economics 101', 'Introduction to Economics', 'Core', 'Letter Grade', 'Economics', 3),
+('EDU111', 'Philosophy and theories of education.', 'Philosophy of Education', 'Theories and Philosophy of Education', 'Core', 'Letter Grade', 'Education', 3),
+('ENG112', 'Introduction to engineering mechanics.', 'Engineering Mechanics', 'Fundamentals of Engineering Mechanics', 'Core', 'Letter Grade', 'Engineering', 4),
+('FAA113', 'Study of sculpture and modern art techniques.', 'Sculpture Art', 'Modern Sculpture and Techniques', 'Elective', 'S/U', 'Fine and Applied Arts', 3),
+('NUR114', 'Introduction to nursing practices and healthcare.', 'Nursing Practices', 'Basic Nursing Practices', 'Core', 'Letter Grade', 'Nursing', 3),
+('PHAR115', 'Study of pharmaceutical sciences and drug development.', 'Pharmaceutical Sciences', 'Introduction to Pharmaceutical Sciences', 'Core', 'Letter Grade', 'Pharmaceutical Sciences', 4),
+('POL116', 'Overview of political theories and government systems.', 'Political Theories', 'Theories of Politics and Government', 'Core', 'Letter Grade', 'Political Science', 3),
+('PSY117', 'Introduction to psychology and human behavior.', 'Psychology 101', 'Fundamentals of Psychology', 'Core', 'S/U', 'Psychology', 3),
+('SPT118', 'Study of sports science and physical education.', 'Sports Physiology', 'Fundamentals of Sports Physiology', 'Core', 'Letter Grade', 'Sports Science', 3),
+('VET119', 'Introduction to veterinary practices and animal healthcare.', 'Veterinary Medicine', 'Basics of Veterinary Medicine', 'Core', 'Letter Grade', 'Veterinary Science', 4),
+('II120', 'Study of innovation and interdisciplinary applications.', 'Integrated Innovation', 'Introduction to Integrated Innovation', 'Elective', 'S/U', 'Integrated Innovation', 3);
+;
