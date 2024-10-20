@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS enrollments (
+CREATE TABLE IF NOT EXISTS enrollment_results (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id VARCHAR(255) NOT NULL,
   course_id VARCHAR(10) NOT NULL,

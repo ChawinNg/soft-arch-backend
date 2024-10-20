@@ -80,8 +80,8 @@ func main() {
 	}
 	userConn := userService.NewUserServiceClient(grpcConn)
 	
-	sqlDSN := os.Getenv("SQL_DB_DSN")
-	dbSQL, err := sql.Open("mysql", sqlDSN)
+	// sqlDSN := os.Getenv("SQL_DB_DSN")
+	dbSQL, err := sql.Open("mysql", "root:root@tcp(0.0.0.0:3333)/regdealer")
 
 	if err != nil {
 		log.Fatal(err)

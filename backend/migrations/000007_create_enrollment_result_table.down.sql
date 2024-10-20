@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS enrollments;
+DROP TABLE IF EXISTS enrollment_results;
