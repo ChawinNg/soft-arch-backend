@@ -1,63 +1,191 @@
 package enrollments
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	userService "backend/internal/genproto/users"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/streadway/amqp"
 )
 
 type EnrollmentHandler struct {
 	service     *EnrollmentService
 	userService userService.UserServiceClient
+	rabbitMQ    *amqp.Channel
 }
 
-func NewEnrollmentHandler(service *EnrollmentService, userService userService.UserServiceClient) *EnrollmentHandler {
-	return &EnrollmentHandler{service: service, userService: userService}
+type EnrollmentAction struct {
+	Action       string     `json:"action"`
+	EnrollmentID string     `json:"id,omitempty"`
+	UserID       string     `json:"user_id,omitempty"`
+	CourseID     string     `json:"course_id,omitempty"`
+	Enrollment   Enrollment `json:"enrollment,omitempty"`
+}
+
+type EnrollmentResponse struct {
+	Status  string       `json:"status"`
+	Message string       `json:"message"`
+	Data    []Enrollment `json:"data,omitempty"`
+}
+
+type NumEnrollmentResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Data    int64  `json:"data,omitempty"`
+}
+
+func NewEnrollmentHandler(service *EnrollmentService, userService userService.UserServiceClient, rabbitMQ *amqp.Channel) *EnrollmentHandler {
+	return &EnrollmentHandler{service: service, userService: userService, rabbitMQ: rabbitMQ}
+}
+
+func (h *EnrollmentHandler) PublishMessage(action EnrollmentAction) error {
+	body, err := json.Marshal(action)
+	if err != nil {
+		return err
+	}
+
+	// Publish the message directly from the handler
+	err = h.rabbitMQ.Publish(
+		"",                 // Exchange
+		"enrollment_queue", // Routing key (queue name)
+		false,              // Mandatory
+		false,              // Immediate
+		amqp.Publishing{
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[X] Sent %s operation", action.Action)
+	return nil
+}
+
+func (h *EnrollmentHandler) WaitForResponse(responseQueue string) ([]byte, error) {
+	// Create a channel to receive the response
+	responseChan := make(chan amqp.Delivery, 1)
+
+	// Consume messages from the response queue
+	go func() {
+		conn, err := amqp.Dial("amqp://root:root@localhost:5672/")
+		if err != nil {
+			log.Printf("Failed to connect to RabbitMQ: %v", err)
+			return
+		}
+		defer conn.Close()
+
+		ch, err := conn.Channel()
+		if err != nil {
+			log.Printf("Failed to open a channel: %v", err)
+			return
+		}
+		defer ch.Close()
+
+		msgs, err := ch.Consume(
+			responseQueue,
+			"",    // consumer
+			true,  // auto-ack
+			false, // exclusive
+			false, // no-local
+			false, // no-wait
+			nil,   // args
+		)
+		if err != nil {
+			log.Printf("Failed to register a consumer: %v", err)
+			return
+		}
+
+		for msg := range msgs {
+			responseChan <- msg // Send the message to the response channel
+			break               // Break after receiving one message
+		}
+	}()
+
+	// Wait for a response or timeout
+	select {
+	case msg := <-responseChan:
+		return msg.Body, nil
+	case <-time.After(5 * time.Second): // Timeout after 5 seconds
+		return nil, fmt.Errorf("timeout waiting for response")
+	}
 }
 
 func (h *EnrollmentHandler) GetUserEnrollment(c *fiber.Ctx) error {
 	user_id := c.Params("user_id")
 
-	enrollments, err := h.service.GetUserEnrollment(user_id)
+	action := EnrollmentAction{
+		Action: "get user enrollment",
+		UserID: user_id,
+	}
+
+	err := h.PublishMessage(action)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error fetching Enrollments",
+			"message": "Error sending enrollment request to queue",
 		})
 	}
-	return c.JSON(fiber.Map{
-		"status":  "success",
-		"message": "Enrollments retrieved successfully",
-		"data":    enrollments,
-	})
+
+	response, err := h.WaitForResponse("response_queue")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to get response",
+		})
+	}
+
+	var enrollmentResponse EnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
+	}
+
+	return c.JSON(enrollmentResponse)
 }
 
 func (h *EnrollmentHandler) GetCourseEnrollment(c *fiber.Ctx) error {
 	course_id := c.Params("course_id")
 
-	enrollments, err := h.service.GetCourseEnrollment(course_id)
+	action := EnrollmentAction{
+		Action:   "get course enrollment",
+		CourseID: course_id,
+	}
+
+	err := h.PublishMessage(action)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error fetching Enrollments",
+			"message": "Error sending course enrollment request to queue",
 		})
 	}
 
-	if len(enrollments) == 0 {
-		return c.Status(http.StatusNotFound).JSON(fiber.Map{
-			"status":  "success",
-			"message": "No enrollments found for this course.",
-			"data":    enrollments,
+	response, err := h.WaitForResponse("response_queue")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to get response",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"status":  "success",
-		"message": "Enrollments retrieved successfully",
-		"data":    enrollments,
-	})
+	var enrollmentResponse EnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
+	}
+
+	return c.JSON(enrollmentResponse)
 }
 
 func (h *EnrollmentHandler) CreateEnrollment(c *fiber.Ctx) error {
@@ -69,20 +197,36 @@ func (h *EnrollmentHandler) CreateEnrollment(c *fiber.Ctx) error {
 		})
 	}
 
-	id, err := h.service.CreateEnrollment(enrollment)
+	action := EnrollmentAction{
+		Action:     "create",
+		Enrollment: enrollment,
+	}
+
+	err := h.PublishMessage(action)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to create enrollment",
+			"message": "Failed to publish enrollment creation request",
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status":  "created",
-		"message": "Enrollment created successfully",
-		"id":      id,
-	})
+	response, err := h.WaitForResponse("response_queue")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to get response",
+		})
+	}
 
+	var enrollmentResponse NumEnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
+	}
+
+	return c.JSON(enrollmentResponse)
 }
 
 func (h *EnrollmentHandler) EditEnrollment(c *fiber.Ctx) error {
@@ -90,73 +234,114 @@ func (h *EnrollmentHandler) EditEnrollment(c *fiber.Ctx) error {
 
 	var enrollment Enrollment
 	if err := c.BodyParser(&enrollment); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Invalid request payload",
 		})
 	}
+
 	enrollment.EnrollmentID = id
-	if err := h.service.EditEnrollment(enrollment); err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+
+	action := EnrollmentAction{
+		Action:     "update",
+		Enrollment: enrollment,
+	}
+
+	err := h.PublishMessage(action)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error updating enrollment",
+			"message": "Failed to publish enrollment update request",
 		})
 	}
-	return c.JSON(fiber.Map{
-		"status":  "success",
-		"message": "Enrollment updated successfully",
-	})
+
+	response, err := h.WaitForResponse("response_queue")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to get response",
+		})
+	}
+
+	var enrollmentResponse EnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
+	}
+
+	return c.JSON(enrollmentResponse)
 }
 
 func (h *EnrollmentHandler) DeleteEnrollment(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if err := h.service.DeleteEnrollment(id); err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+
+	action := EnrollmentAction{
+		Action:       "delete",
+		EnrollmentID: id,
+	}
+
+	err := h.PublishMessage(action)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error deleting enrollment",
+			"message": "Failed to publish enrollment deletion request",
 		})
 	}
-	return c.JSON(fiber.Map{
-		"status":  "success",
-		"message": "Enrollment deleted successfully",
-	})
+
+	response, err := h.WaitForResponse("response_queue")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to get response",
+		})
+	}
+
+	var enrollmentResponse EnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
+	}
+
+	return c.JSON(enrollmentResponse)
 }
 
 func (h *EnrollmentHandler) SummarizeUserEnrollmentResult(c *fiber.Ctx) error {
 	user_id := c.Params("user_id")
 
-	enrollments, err := h.service.GetUserEnrollment(user_id)
+	action := EnrollmentAction{
+		Action: "summarize user enrollment",
+		UserID: user_id,
+	}
+
+	err := h.PublishMessage(action)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error fetching Enrollments",
+			"message": "Failed to publish enrollment deletion request",
 		})
 	}
 
-	points, err := h.service.SummarizePoints(user_id)
+	response, err := h.WaitForResponse("response_queue")
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error getting user's points",
+			"message": "Failed to get response",
 		})
 	}
 
-	for _, enrollment := range enrollments {
-		if err := h.service.DeleteEnrollment(enrollment.EnrollmentID); err != nil {
-			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Error deleting enrollment",
-			})
-		}
+	var enrollmentResponse NumEnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
 	}
 
-	idStr := c.Params("user_id")
-	h.userService.ReduceUserPoint(c.Context(), &userService.ReduceUserPointRequest{Id: idStr, ReducePoint: points})
-
-	return c.JSON(fiber.Map{
-		"status":  "success",
-		"message": "Enrollment deleted and User's Points reduced successfully",
-	})
+	return c.JSON(enrollmentResponse)
 }
 
 func (h *EnrollmentHandler) SummarizeCourseEnrollmentResult(c *fiber.Ctx) error {

@@ -18,6 +18,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -51,6 +52,42 @@ func main() {
 	database.DB = dbSQL
 	database.NewSQL()
 
+	rabbitMQConn, err := amqp.Dial("amqp://root:root@localhost:5672/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rabbitMQConn.Close()
+
+	ch, err := rabbitMQConn.Channel()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ch.Close()
+
+	_, err = ch.QueueDeclare(
+		"enrollment_queue", // queue name
+		true,               // durable
+		false,              // delete when unused
+		false,              // exclusive
+		false,              // no-wait
+		nil,                // arguments
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = ch.QueueDeclare(
+		"response_queue", // queue name
+		true,             // durable
+		false,            // delete when unused
+		false,            // exclusive
+		false,            // no-wait
+		nil,              // arguments
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	//Define Handlers & Services
 	userConn := userService.NewUserServiceClient(conn)
 	userHandler := user.NewHandler(userConn)
@@ -62,7 +99,7 @@ func main() {
 	courseHandler := courses.NewCourseHandler(courseService, sectionService)
 
 	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
-	enrollmentHandler := enrollments.NewEnrollmentHandler(enrollmentService, userConn)
+	enrollmentHandler := enrollments.NewEnrollmentHandler(enrollmentService, userConn, ch)
 
 	instructorService := instructors.NewInstructorService(dbSQL)
 	instructorHandler := instructors.NewInstructorHandler(instructorService)
