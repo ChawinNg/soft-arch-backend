@@ -17,9 +17,21 @@ type EnrollmentSummary struct {
 	CourseName   string `json:"course_name"`
 	CourseCredit int    `json:"course_credit"`
 	MaxCapacity  int    `json:"max_capacity"`
-	SectionID    int    `json:"section_id"` 
+	SectionID    int    `json:"section_id"`
 	Section      int    `json:"section"`
 	Round        int    `json:"round"`
 	Points       int    `json:"points"`
 	Capacity     int    `json:"capacity"`
+}
+
+type EnrollmentRound struct {
+	Round string `json:"round"`
+}
+type EnrollmentAction struct {
+	Action       string     `json:"action"`
+	EnrollmentID string     `json:"id,omitempty"`
+	UserID       string     `json:"user_id,omitempty"`
+	CourseID     string     `json:"course_id,omitempty"`
+	Enrollment   Enrollment `json:"enrollment,omitempty"`
+	Round        string     `json:"round,omitempty"`
 }

@@ -47,7 +47,7 @@ func main() {
 	dbSQL, err := sql.Open("mysql", sqlDSN)
 
 	if err != nil {
-		log.Fatal("mysql connection error : ",err)
+		log.Fatal("mysql connection error : ", err)
 	}
 	defer dbSQL.Close()
 	database.DB = dbSQL
@@ -55,13 +55,13 @@ func main() {
 
 	rabbitMQConn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/", os.Getenv("RABBITMQ_HOST")))
 	if err != nil {
-		log.Fatal("rabbitMQ connection error : ",err)
+		log.Fatal("rabbitMQ connection error : ", err)
 	}
 	defer rabbitMQConn.Close()
 
 	ch, err := rabbitMQConn.Channel()
 	if err != nil {
-		log.Fatal("rabbitMQ channel error : ",err)
+		log.Fatal("rabbitMQ channel error : ", err)
 	}
 	defer ch.Close()
 
@@ -74,7 +74,7 @@ func main() {
 		nil,                // arguments
 	)
 	if err != nil {
-		log.Fatal("rabbitMQ declare enrollment_queue error : ",err)
+		log.Fatal("rabbitMQ declare enrollment_queue error : ", err)
 	}
 
 	_, err = ch.QueueDeclare(
@@ -86,7 +86,7 @@ func main() {
 		nil,              // arguments
 	)
 	if err != nil {
-		log.Fatal("rabbitMQ declare response_queue error : ",err)
+		log.Fatal("rabbitMQ declare response_queue error : ", err)
 	}
 
 	//Define Handlers & Services
@@ -147,6 +147,7 @@ func main() {
 	apiv1.Put("/enrollments/:id", enrollmentHandler.EditEnrollment)
 	apiv1.Delete("/enrollments/:id", enrollmentHandler.DeleteEnrollment)
 	apiv1.Delete("/enrollments/summarize/:user_id", enrollmentHandler.SummarizeUserEnrollmentResult)
+	apiv1.Post("/enrollments/summarize", enrollmentHandler.SummarizeCourseEnrollmentResult)
 
 	//instructors
 	apiv1.Post("/instructors", instructorHandler.CreateInstructor)

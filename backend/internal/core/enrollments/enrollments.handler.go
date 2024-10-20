@@ -20,18 +20,11 @@ type EnrollmentHandler struct {
 	rabbitMQ    *amqp.Channel
 }
 
-type EnrollmentAction struct {
-	Action       string     `json:"action"`
-	EnrollmentID string     `json:"id,omitempty"`
-	UserID       string     `json:"user_id,omitempty"`
-	CourseID     string     `json:"course_id,omitempty"`
-	Enrollment   Enrollment `json:"enrollment,omitempty"`
-}
-
 type EnrollmentResponse struct {
-	Status  string       `json:"status"`
-	Message string       `json:"message"`
-	Data    []Enrollment `json:"data,omitempty"`
+	Status      string                          `json:"status"`
+	Message     string                          `json:"message"`
+	Data        []Enrollment        `json:"data,omitempty"`
+	SummaryData []EnrollmentSummary `json:"summary_data,omitempty"`
 }
 
 type NumEnrollmentResponse struct {
@@ -346,5 +339,41 @@ func (h *EnrollmentHandler) SummarizeUserEnrollmentResult(c *fiber.Ctx) error {
 }
 
 func (h *EnrollmentHandler) SummarizeCourseEnrollmentResult(c *fiber.Ctx) error {
-	return nil
+	var round EnrollmentRound
+	if err := c.BodyParser(&round); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid request payload",
+		})
+	}
+
+	action := EnrollmentAction{
+		Action: "summarize course enrollment result",
+		Round:  round.Round,
+	}
+
+	err := h.PublishMessage(action)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to publish summarize course enrollment result request",
+		})
+	}
+
+	response, err := h.WaitForResponse("response_queue")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to get response",
+		})
+	}
+
+	var enrollmentResponse EnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
+	}
+	return c.JSON(enrollmentResponse)
 }

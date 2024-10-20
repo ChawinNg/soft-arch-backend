@@ -1,6 +1,8 @@
 package main
 
 import (
+	"backend/internal/core/enrollments"
+	"backend/internal/core/sections"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -8,7 +10,6 @@ import (
 	"log"
 	"os"
 
-	"backend/internal/core/enrollments"
 	userService "backend/internal/genproto/users"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -18,18 +19,11 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type EnrollmentAction struct {
-	Action       string                 `json:"action"`
-	EnrollmentID string                 `json:"id,omitempty"`
-	UserID       string                 `json:"user_id,omitempty"`
-	CourseID     string                 `json:"course_id,omitempty"`
-	Enrollment   enrollments.Enrollment `json:"enrollment,omitempty"`
-}
-
 type EnrollmentResponse struct {
-	Status  string                   `json:"status"`
-	Message string                   `json:"message"`
-	Data    []enrollments.Enrollment `json:"data,omitempty"`
+	Status      string                          `json:"status"`
+	Message     string                          `json:"message"`
+	Data        []enrollments.Enrollment        `json:"data,omitempty"`
+	SummaryData []enrollments.EnrollmentSummary `json:"summary_data,omitempty"`
 }
 
 type NumEnrollmentResponse struct {
@@ -79,7 +73,7 @@ func main() {
 		panic(err)
 	}
 	userConn := userService.NewUserServiceClient(grpcConn)
-	
+
 	// sqlDSN := os.Getenv("SQL_DB_DSN")
 	dbSQL, err := sql.Open("mysql", "root:root@tcp(0.0.0.0:3333)/regdealer")
 
@@ -88,10 +82,10 @@ func main() {
 	}
 	defer dbSQL.Close()
 	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
-
+	sectionService := sections.NewSectionService(dbSQL)
 	go func() {
 		for d := range msgs {
-			var action EnrollmentAction
+			var action enrollments.EnrollmentAction
 			err := json.Unmarshal(d.Body, &action)
 
 			if err != nil {
@@ -348,6 +342,62 @@ func main() {
 				if err != nil {
 					log.Printf("Error publishing response: %v", err)
 				}
+			} else if action.Action == "summarize course enrollment result" {
+				round := action.Round
+				var enrollmentSummary []enrollments.EnrollmentSummary
+				var newSectionDatas []sections.Section
+				var response EnrollmentResponse
+				//summary
+				enrollmentSummary, newSectionDatas, err = enrollmentService.SummarizeCourseEnrollmentResult(round)
+				if err != nil {
+					log.Printf("Error SummarizeCourseEnrollmentResult %s: %v", round, err)
+					response = EnrollmentResponse{
+						Status:  "error",
+						Message: "Error SummarizeCourseEnrollmentResult",
+					}
+				} else {
+					//update section
+					for _, newSectionData := range newSectionDatas {
+						err = sectionService.UpdateSection(newSectionData)
+						if err != nil {
+							log.Printf("Error UpdateSection : %v", err)
+							response = EnrollmentResponse{
+								Status:  "error",
+								Message: "Error UpdateSection",
+							}
+							break
+						}
+					}
+					//!use enrollmentSummary to update user points
+
+				}
+				if response.Message == "" {
+					response = EnrollmentResponse{
+						Status:  "success",
+						Message: "Enrollments summarized successfully",
+						SummaryData:  enrollmentSummary,
+					}
+				}
+				//marshal
+				responseBody, err := json.Marshal(response)
+				if err != nil {
+					log.Printf("Error marshaling response: %v", err)
+					continue
+				}
+
+				err = ch.Publish(
+					"",               // exchange
+					"response_queue", // response queue
+					false,            // mandatory
+					false,            // immediate
+					amqp.Publishing{
+						ContentType: "application/json",
+						Body:        responseBody,
+					})
+				if err != nil {
+					log.Printf("Error publishing response: %v", err)
+				}
+
 			}
 		}
 	}()
