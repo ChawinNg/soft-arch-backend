@@ -129,10 +129,10 @@ func (e *EnrollmentService) SummarizePoints(user_id string) (int64, error) {
 	return totalPoints, nil
 }
 
-func InsertEnrollment(db *sql.DB, enrollment EnrollmentSummary) error {
+func InsertEnrollmentResult(db *sql.DB, enrollment EnrollmentSummary) error {
 	query := `
 		INSERT INTO enrollment_results (
-			user_id, course_id, course_name, course_credit, section_id, section, round, points, capacity
+			user_id, course_id, course_name, course_credit, section_id, section, round, points, result
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
@@ -145,7 +145,7 @@ func InsertEnrollment(db *sql.DB, enrollment EnrollmentSummary) error {
 		enrollment.Section,
 		enrollment.Round,
 		enrollment.Points,
-		enrollment.Capacity,
+		enrollment.Result,
 	)
 
 	if err != nil {
@@ -161,19 +161,18 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 		SELECT  e.user_id, e.course_id, e.course_name,e.course_credit,s.max_capacity,s.id, e.section,e.round, e.points,s.capacity
 		FROM enrollments e
 		INNER JOIN sections s ON e.section_id = s.id
-		WHERE e.round = ?
+		WHERE e.round = ? AND e.summarized = FALSE
 		ORDER BY e.course_id, e.section, e.points DESC
 	`
 	rows, err := s.db.Query(query, round)
 	if err != nil {
 		log.Println("failed to query enrollments: %v", err)
-		return   nil,nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
 	var enrollments []EnrollmentSummary
 	var SectionToUpdates []sections.Section
-
 	var prevCourseID string
 	var availableCapacity, prevSectionID, prevSection, prevMaxCapa int
 	prevSection = 0
@@ -185,9 +184,9 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 			&enrollment.MaxCapacity, &enrollment.SectionID, &enrollment.Section,
 			&enrollment.Round, &enrollment.Points, &enrollment.Capacity); err != nil {
 			log.Println("Error scanning enrollments:", err)
-			return   nil,nil, err
+			return nil, nil, err
 		}
-
+		// the code below assumed initial availableCapacity is ALWAYS > 0
 		// if first row
 		if prevCourseID == "" && prevSection == 0 && enrollment.MaxCapacity-enrollment.Capacity > 0 {
 			prevCourseID = enrollment.CourseID
@@ -195,51 +194,93 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 			prevSectionID = enrollment.SectionID
 			prevMaxCapa = enrollment.MaxCapacity
 			availableCapacity = enrollment.MaxCapacity - enrollment.Capacity - 1
+
+			enrollment.Result = true
+
 			enrollments = append(enrollments, enrollment)
-			err := InsertEnrollment(s.db,enrollment)
+			err := InsertEnrollmentResult(s.db, enrollment)
 			if err != nil {
-				return  nil,nil, err
+				return nil, nil, err
 			}
 			continue
 		}
 
-		// diff course or diff section or max cap
-		if enrollment.CourseID != prevCourseID || enrollment.Section != prevSection || availableCapacity == 0 {
+		// diff course or diff section
+		if enrollment.CourseID != prevCourseID || enrollment.Section != prevSection {
+			if availableCapacity < 0 {
+				availableCapacity = 0
+			}
 			//add section to update
 			var SectionToUpdate sections.Section
 			SectionToUpdate.CourseID = prevCourseID
-			SectionToUpdate.Section = enrollment.Section
+			SectionToUpdate.Section = prevSection
 			SectionToUpdate.MaxCapacity = prevMaxCapa
-			SectionToUpdate.Capacity = availableCapacity
+			SectionToUpdate.Capacity = prevMaxCapa - availableCapacity
 			SectionToUpdate.SectionID = prevSectionID
 			SectionToUpdates = append(SectionToUpdates, SectionToUpdate)
 			//set info of the new one
+			//first one is always a success reg user
 			prevCourseID = enrollment.CourseID
 			prevSection = enrollment.Section
 			prevSectionID = enrollment.SectionID
 			prevMaxCapa = enrollment.MaxCapacity
 			availableCapacity = enrollment.MaxCapacity - enrollment.Capacity - 1
+
+			enrollment.Result = true
+
 			enrollments = append(enrollments, enrollment)
-			err := InsertEnrollment(s.db,enrollment)
+			err := InsertEnrollmentResult(s.db, enrollment)
 			if err != nil {
-				return  nil,nil, err
+				return nil, nil, err
 			}
 			continue
+		} else {
+			//full capacity
+			if availableCapacity <= 0 {
+				//fail reg user
+				enrollment.Result = false
+
+			} else {
+				//success reg user
+				enrollment.Result = true
+			}
 		}
+
 		enrollments = append(enrollments, enrollment)
-		err := InsertEnrollment(s.db,enrollment)
+		err := InsertEnrollmentResult(s.db, enrollment)
 		if err != nil {
-			return  nil,nil, err
+			return nil, nil, err
 		}
+
 		availableCapacity--
 
 	}
 
-	if err = rows.Err(); err != nil {
-		log.Println("Error during rows iteration:", err)
-		return   nil,nil, err
+	lastEnrollment := enrollments[len(enrollments)-1]
+	lastSectionToUpdate := SectionToUpdates[len(SectionToUpdates)-1]
+
+	if (lastEnrollment.CourseID != lastSectionToUpdate.CourseID) || (lastEnrollment.Section != lastSectionToUpdate.Section) {
+		var SectionToUpdate sections.Section
+		SectionToUpdate.CourseID = prevCourseID
+		SectionToUpdate.Section = prevSection
+		SectionToUpdate.MaxCapacity = prevMaxCapa
+		SectionToUpdate.Capacity = prevMaxCapa - availableCapacity
+		SectionToUpdate.SectionID = prevSectionID
+		SectionToUpdates = append(SectionToUpdates, SectionToUpdate)
 	}
 
+	if err = rows.Err(); err != nil {
+		log.Println("Error during rows iteration:", err)
+		return nil, nil, err
+	}
+
+	//set summarized
+	_, err2 := s.db.Exec("UPDATE enrollments SET summarized = TRUE WHERE round = ?", round)
+
+	if err2 != nil {
+		log.Println("Error updating enrollments:", err2)
+		return nil, nil, err2
+	}
 
 	return enrollments, SectionToUpdates, nil
 }
