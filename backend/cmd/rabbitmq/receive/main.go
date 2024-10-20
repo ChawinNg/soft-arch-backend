@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -38,7 +39,7 @@ type NumEnrollmentResponse struct {
 }
 
 func connectRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
-	conn, err := amqp.Dial("amqp://root:root@localhost:5672/")
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/", os.Getenv("RABBITMQ_HOST")))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -78,8 +79,9 @@ func main() {
 		panic(err)
 	}
 	userConn := userService.NewUserServiceClient(grpcConn)
-
-	dbSQL, err := sql.Open("mysql", "admin:root@tcp(localhost:3307)/root")
+	
+	sqlDSN := os.Getenv("SQL_DB_DSN")
+	dbSQL, err := sql.Open("mysql", sqlDSN)
 
 	if err != nil {
 		log.Fatal(err)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -46,21 +47,21 @@ func main() {
 	dbSQL, err := sql.Open("mysql", sqlDSN)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("mysql connection error : ",err)
 	}
 	defer dbSQL.Close()
 	database.DB = dbSQL
 	database.NewSQL()
 
-	rabbitMQConn, err := amqp.Dial("amqp://root:root@localhost:5672/")
+	rabbitMQConn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/", os.Getenv("RABBITMQ_HOST")))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("rabbitMQ connection error : ",err)
 	}
 	defer rabbitMQConn.Close()
 
 	ch, err := rabbitMQConn.Channel()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("rabbitMQ channel error : ",err)
 	}
 	defer ch.Close()
 
@@ -73,7 +74,7 @@ func main() {
 		nil,                // arguments
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("rabbitMQ declare enrollment_queue error : ",err)
 	}
 
 	_, err = ch.QueueDeclare(
@@ -85,7 +86,7 @@ func main() {
 		nil,              // arguments
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("rabbitMQ declare response_queue error : ",err)
 	}
 
 	//Define Handlers & Services

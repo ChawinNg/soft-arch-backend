@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	userService "backend/internal/genproto/users"
@@ -75,7 +76,7 @@ func (h *EnrollmentHandler) WaitForResponse(responseQueue string) ([]byte, error
 
 	// Consume messages from the response queue
 	go func() {
-		conn, err := amqp.Dial("amqp://root:root@localhost:5672/")
+		conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/", os.Getenv("RABBITMQ_HOST")))
 		if err != nil {
 			log.Printf("Failed to connect to RabbitMQ: %v", err)
 			return
