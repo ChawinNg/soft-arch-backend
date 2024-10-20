@@ -160,8 +160,8 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 	query := `
 		SELECT  e.user_id, e.course_id, e.course_name,e.course_credit,s.max_capacity,s.id, e.section,e.round, e.points,s.capacity
 		FROM enrollments e
-		WHERE e.round = ?
 		INNER JOIN sections s ON e.section_id = s.id
+		WHERE e.round = ?
 		ORDER BY e.course_id, e.section, e.points DESC
 	`
 	rows, err := s.db.Query(query, round)
