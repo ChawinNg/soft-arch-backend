@@ -57,7 +57,7 @@ func (s *SectionService) CreateSection(section Section) error {
 }
 
 func (s *SectionService) UpdateSection(section Section) error {
-	_, err := s.db.Exec("UPDATE sections SET course_id = ?, section = ?, max_capacity = ? capacity = ? WHERE id = ?",
+	_, err := s.db.Exec("UPDATE sections SET course_id = ?, section = ?, max_capacity = ?, capacity = ? WHERE id = ?",
 		section.CourseID, section.Section, section.MaxCapacity, section.Capacity, section.SectionID)
 	if err != nil {
 		log.Println("Error updating section:", err)
