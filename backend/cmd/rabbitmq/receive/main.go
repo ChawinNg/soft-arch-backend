@@ -134,6 +134,47 @@ func main() {
 				if err != nil {
 					log.Printf("Error publishing response: %v", err)
 				}
+			} else if action.Action == "get user enrollment result" {
+				enrollments, err := enrollmentService.GetUserEnrollmentResult(action.UserID)
+				var response EnrollmentResponse
+				if err != nil {
+					response = EnrollmentResponse{
+						Status:  "error",
+						Message: "Error fetching enrollment results",
+						Data:    nil,
+					}
+				} else {
+					response = EnrollmentResponse{
+						Status:  "success",
+						Message: "Enrollment results retrieved successfully",
+						SummaryData:    enrollments,
+					}
+				}
+				if err != nil {
+					log.Printf("Error fetching enrollment results for user %s: %v", action.UserID, err)
+				} else if len(enrollments) == 0 {
+					log.Printf("No enrollment results found for user %s", action.UserID)
+				} else {
+					log.Printf("Enrollment results for user %s: %v", action.UserID, enrollments)
+				}
+				responseBody, err := json.Marshal(response)
+				if err != nil {
+					log.Printf("Error marshaling response: %v", err)
+					continue
+				}
+
+				err = ch.Publish(
+					"",               // exchange
+					"response_queue", // response queue
+					false,            // mandatory
+					false,            // immediate
+					amqp.Publishing{
+						ContentType: "application/json",
+						Body:        responseBody,
+					})
+				if err != nil {
+					log.Printf("Error publishing response: %v", err)
+				}
 			} else if action.Action == "get course enrollment" {
 				enrollments, err := enrollmentService.GetCourseEnrollment(action.CourseID)
 				var response EnrollmentResponse

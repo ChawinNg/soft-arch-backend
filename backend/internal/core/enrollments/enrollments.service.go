@@ -42,6 +42,33 @@ func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, err
 	return enrollments, nil
 }
 
+func (e *EnrollmentService) GetUserEnrollmentResult(user_id string) ([]EnrollmentSummary, error) {
+	rows, err := e.db.Query(`
+    SELECT user_id, course_id, course_name, course_credit, 
+		 section_id, section, round, points, result
+	FROM enrollment_results
+    WHERE user_id = ?`, user_id)
+	if err != nil {
+		log.Println("Error fetching Enrollment results:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var enrollments []EnrollmentSummary
+	for rows.Next() {
+		var enrollment EnrollmentSummary
+		if err := rows.Scan(&enrollment.UserID, &enrollment.CourseID, &enrollment.CourseName, &enrollment.CourseCredit,
+			 &enrollment.SectionID, &enrollment.Section,
+			&enrollment.Round, &enrollment.Points, &enrollment.Result); err != nil {
+			log.Println("Error scanning Enrollment results:", err)
+			return nil, err
+		}
+		enrollments = append(enrollments, enrollment)
+	}
+
+	return enrollments, nil
+}
+
 func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment, error) {
 	rows, err := e.db.Query(`
 	SELECT e.id, e.user_id, e.course_id, c.course_name, c.credit, e.section_id, e.section, e.points, e.round

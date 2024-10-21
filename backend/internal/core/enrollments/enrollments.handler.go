@@ -147,6 +147,41 @@ func (h *EnrollmentHandler) GetUserEnrollment(c *fiber.Ctx) error {
 	return c.JSON(enrollmentResponse)
 }
 
+func (h *EnrollmentHandler) GetUserEnrollmentResult(c *fiber.Ctx) error {
+	user_id := c.Params("user_id")
+
+	action := EnrollmentAction{
+		Action: "get user enrollment result",
+		UserID: user_id,
+	}
+
+	err := h.PublishMessage(action)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error sending enrollment request to queue",
+		})
+	}
+
+	response, err := h.WaitForResponse("response_queue")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to get response",
+		})
+	}
+
+	var enrollmentResponse EnrollmentResponse
+	if err := json.Unmarshal(response, &enrollmentResponse); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to unmarshal response",
+		})
+	}
+
+	return c.JSON(enrollmentResponse)
+}
+
 func (h *EnrollmentHandler) GetCourseEnrollment(c *fiber.Ctx) error {
 	course_id := c.Params("course_id")
 

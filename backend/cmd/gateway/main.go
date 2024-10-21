@@ -148,6 +148,7 @@ func main() {
 	apiv1.Delete("/enrollments/:id", enrollmentHandler.DeleteEnrollment)
 	apiv1.Delete("/enrollments/summarize/:user_id", enrollmentHandler.SummarizeUserEnrollmentResult)
 	apiv1.Post("/enrollments/summarize", enrollmentHandler.SummarizeCourseEnrollmentResult)
+	apiv1.Get("/enrollments/result/user/:user_id", enrollmentHandler.GetUserEnrollmentResult)
 
 	//instructors
 	apiv1.Post("/instructors", instructorHandler.CreateInstructor)
