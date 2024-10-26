@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
+	github.com/gofiber/fiber v1.14.6
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.16.1
 	google.golang.org/grpc v1.66.1
@@ -12,6 +13,8 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/gofiber/utils v0.0.10 // indirect
+	github.com/gorilla/schema v1.1.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	golang.org/x/net v0.26.0 // indirect

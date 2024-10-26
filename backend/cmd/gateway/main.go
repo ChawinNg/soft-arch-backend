@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
-	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 
 	"backend/internal/core/courses"
@@ -94,7 +96,7 @@ func main() {
 	userHandler := user.NewHandler(userConn)
 
 	sectionService := sections.NewSectionService(dbSQL)
-	sectionHandler := sections.NewSectionHandler(sectionService)
+	// sectionHandler := sections.NewSectionHandler(sectionService)
 
 	courseService := courses.NewCourseService(dbSQL)
 	courseHandler := courses.NewCourseHandler(courseService, sectionService)
@@ -134,12 +136,12 @@ func main() {
 	apiv1.Put("/courses/:id", courseHandler.UpdateCourse)
 	apiv1.Delete("/courses/:id", courseHandler.DeleteCourse)
 
-	apiv1.Get("/sections", sectionHandler.GetAllSections)
-	apiv1.Get("/sections/courses/:id", sectionHandler.GetSectionsByCourseID)
-	apiv1.Get("/sections/:id", sectionHandler.GetSectionByID)
-	apiv1.Post("/sections", sectionHandler.CreateSection)
-	apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
-	apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
+	apiv1.Get("/sections", forwardRequest("http://localhost:8081"))
+	apiv1.Get("/sections/courses/:id", forwardRequest("http://localhost:8081"))
+	apiv1.Get("/sections/:id", forwardRequest("http://localhost:8081"))
+	apiv1.Post("/sections", forwardRequest("http://localhost:8081"))
+	apiv1.Put("/sections/:id", forwardRequest("http://localhost:8081"))
+	apiv1.Delete("/sections/:id", forwardRequest("http://localhost:8081"))
 
 	apiv1.Get("/enrollments/user/:user_id", enrollmentHandler.GetUserEnrollment)
 	apiv1.Get("/enrollments/course/:course_id", enrollmentHandler.GetCourseEnrollment)
@@ -156,5 +158,43 @@ func main() {
 	apiv1.Post("/instructors/contact", instructorHandler.SendEmail)
 
 	// Start the server
-	log.Fatal(app.Listen(os.Getenv("BACKEND_REST")))
+	log.Fatal(app.Listen(os.Getenv("BACKEND_GATEWAY")))
+}
+
+func forwardRequest(targetURL string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		reqBody := bytes.NewReader(c.Body())
+		// Create a new HTTP request to forward
+		req, err := http.NewRequest(c.Method(), targetURL+c.Path(), reqBody)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+
+		for k, values := range c.GetReqHeaders() {
+			for _, v := range values {
+				req.Header.Add(k, v)
+			}
+		}
+
+		// Send the request
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		defer resp.Body.Close()
+
+		// Copy response headers and status code
+		for k, v := range resp.Header {
+			c.Set(k, v[0])
+		}
+		c.Status(resp.StatusCode)
+
+		// Copy response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return c.Send(body)
+	}
 }
