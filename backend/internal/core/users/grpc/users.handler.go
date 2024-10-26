@@ -102,7 +102,7 @@ func (h *Handler) RegisterUser(c context.Context, u *users.RegisterUserRequest) 
 		"surname":  u.Surname,
 		"email":    u.Email,
 		"password": hashedPassword,
-		"points":   0,
+		"points":   40,
 	}
 
 	user, err := h.db.InsertOne(c, reg_user)

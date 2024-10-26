@@ -36,6 +36,7 @@ func main() {
 	userService.RegisterUserServiceServer(grpcServer, userHandler)
 
 	lis, err := net.Listen("tcp", os.Getenv("GRPC_SERVER_HOST"))
+	log.Println("GRPC Server Running on", os.Getenv("GRPC_SERVER_HOST"))
 
 	if err != nil {
 		panic(err)

@@ -12,7 +12,7 @@ message User {
     string surname = 4;
     string email = 5;
     string password = 6;
-    int64 points = 7;
+    int32 points = 7;
 }
 
 message GetUserRequest {
@@ -92,11 +92,11 @@ message ResetAllUserPointResponse{
 
 message ReduceUserPointRequest{
     string id = 1;
-    int64 reduce_point = 2;
+    int32 reduce_point = 2;
 }
 
 message ReduceUserPointResponse{
-    int64 remain_point = 1;
+    int32 remain_point = 1;
 }
 
 // Define the User service

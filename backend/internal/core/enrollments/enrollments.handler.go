@@ -21,8 +21,8 @@ type EnrollmentHandler struct {
 }
 
 type EnrollmentResponse struct {
-	Status      string                          `json:"status"`
-	Message     string                          `json:"message"`
+	Status      string              `json:"status"`
+	Message     string              `json:"message"`
 	Data        []Enrollment        `json:"data,omitempty"`
 	SummaryData []EnrollmentSummary `json:"summary_data,omitempty"`
 }
