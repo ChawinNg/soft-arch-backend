@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/internal/core/courses"
 	"backend/internal/core/sections"
 	"backend/internal/database"
 	"database/sql"
@@ -26,6 +27,8 @@ func main() {
 
 	sectionService := sections.NewSectionService(dbSQL)
 	sectionHandler := sections.NewSectionHandler(sectionService)
+	courseService := courses.NewCourseService(dbSQL)
+	courseHandler := courses.NewCourseHandler(courseService, sectionService)
 
 	apiv1 := app2.Group("/api/v1")
 
@@ -35,6 +38,14 @@ func main() {
 	apiv1.Post("/sections", sectionHandler.CreateSection)
 	apiv1.Put("/sections/:id", sectionHandler.UpdateSection)
 	apiv1.Delete("/sections/:id", sectionHandler.DeleteSection)
+
+	apiv1.Get("/courses", courseHandler.GetCourses)
+	apiv1.Get("/courses/search", courseHandler.IndexCourses)
+	apiv1.Get("/courses/paginated", courseHandler.GetCoursesPaginated)
+	apiv1.Get("/courses/:id", courseHandler.GetCourse)
+	apiv1.Post("/courses", courseHandler.CreateCourse)
+	apiv1.Put("/courses/:id", courseHandler.UpdateCourse)
+	apiv1.Delete("/courses/:id", courseHandler.DeleteCourse)
 
 	log.Fatal(app2.Listen(os.Getenv("BACKEND_REST")))
 }

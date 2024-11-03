@@ -3,15 +3,14 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 
-	"backend/internal/core/courses"
 	"backend/internal/core/enrollments"
 	"backend/internal/core/instructors"
-	"backend/internal/core/sections"
 	user "backend/internal/core/users/rest"
 	"backend/internal/database"
 	userService "backend/internal/genproto/users"
@@ -95,11 +94,11 @@ func main() {
 	userConn := userService.NewUserServiceClient(conn)
 	userHandler := user.NewHandler(userConn)
 
-	sectionService := sections.NewSectionService(dbSQL)
+	// sectionService := sections.NewSectionService(dbSQL)
 	// sectionHandler := sections.NewSectionHandler(sectionService)
 
-	courseService := courses.NewCourseService(dbSQL)
-	courseHandler := courses.NewCourseHandler(courseService, sectionService)
+	// courseService := courses.NewCourseService(dbSQL)
+	// courseHandler := courses.NewCourseHandler(courseService, sectionService)
 
 	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
 	enrollmentHandler := enrollments.NewEnrollmentHandler(enrollmentService, userConn, ch)
@@ -128,13 +127,13 @@ func main() {
 	apiv1.Post("/login", userHandler.LoginUser)
 	apiv1.Get("/logout", mw.WithAuthentication(userHandler.LogoutUser))
 
-	apiv1.Get("/courses", courseHandler.GetCourses)
-	apiv1.Get("/courses/search", courseHandler.IndexCourses)
-	apiv1.Get("/courses/paginated", courseHandler.GetCoursesPaginated)
-	apiv1.Get("/courses/:id", courseHandler.GetCourse)
-	apiv1.Post("/courses", courseHandler.CreateCourse)
-	apiv1.Put("/courses/:id", courseHandler.UpdateCourse)
-	apiv1.Delete("/courses/:id", courseHandler.DeleteCourse)
+	apiv1.Get("/courses", forwardRequest("http://localhost:8081"))
+	apiv1.Get("/courses/search", forwardRequest("http://localhost:8081"))
+	apiv1.Get("/courses/paginated", forwardRequest("http://localhost:8081"))
+	apiv1.Get("/courses/:id", forwardRequest("http://localhost:8081"))
+	apiv1.Post("/courses", forwardRequest("http://localhost:8081"))
+	apiv1.Put("/courses/:id", forwardRequest("http://localhost:8081"))
+	apiv1.Delete("/courses/:id", forwardRequest("http://localhost:8081"))
 
 	apiv1.Get("/sections", forwardRequest("http://localhost:8081"))
 	apiv1.Get("/sections/courses/:id", forwardRequest("http://localhost:8081"))
