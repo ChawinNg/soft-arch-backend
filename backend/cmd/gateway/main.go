@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"backend/internal/core/enrollments"
-	"backend/internal/core/instructors"
 	user "backend/internal/core/users/rest"
 	"backend/internal/database"
 	userService "backend/internal/genproto/users"
@@ -103,8 +102,8 @@ func main() {
 	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
 	enrollmentHandler := enrollments.NewEnrollmentHandler(enrollmentService, userConn, ch)
 
-	instructorService := instructors.NewInstructorService(dbSQL)
-	instructorHandler := instructors.NewInstructorHandler(instructorService)
+	// instructorService := instructors.NewInstructorService(dbSQL)
+	// instructorHandler := instructors.NewInstructorHandler(instructorService)
 
 	//Define Middleware
 	secret := os.Getenv("JWT_SECRET")
@@ -152,9 +151,9 @@ func main() {
 	apiv1.Get("/enrollments/result/user/:user_id", enrollmentHandler.GetUserEnrollmentResult)
 
 	//instructors
-	apiv1.Post("/instructors", instructorHandler.CreateInstructor)
-	apiv1.Put("/instructors/:id", instructorHandler.UpdateInstructor)
-	apiv1.Post("/instructors/contact", instructorHandler.SendEmail)
+	apiv1.Post("/instructors", forwardRequest("http://localhost:8082"))
+	apiv1.Put("/instructors/:id", forwardRequest("http://localhost:8082"))
+	apiv1.Post("/instructors/contact", forwardRequest("http://localhost:8082"))
 
 	// Start the server
 	log.Fatal(app.Listen(os.Getenv("BACKEND_GATEWAY")))
