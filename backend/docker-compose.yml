@@ -104,10 +104,9 @@ services:
     - RABBITMQ_HOST=rabbitmq
     - RABBITMQ_PORT=5672
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
+      api-gateway:
+        condition: service_started
+      
     networks:
       - masato
 
@@ -115,4 +114,5 @@ volumes:
   mysql_volume:
 
 networks:
-  masato: {}
+  masato: 
+    driver: bridge
