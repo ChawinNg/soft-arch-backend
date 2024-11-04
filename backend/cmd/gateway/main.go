@@ -52,8 +52,11 @@ func main() {
 	defer dbSQL.Close()
 	database.DB = dbSQL
 	database.NewSQL()
+	// Connect to rabbitmq
+	rabbitmqHost := os.Getenv("RABBITMQ_HOST")
+    rabbitmqPort := os.Getenv("RABBITMQ_PORT")
 
-	rabbitMQConn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/", os.Getenv("RABBITMQ_HOST")))
+	rabbitMQConn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%s:%s/", rabbitmqHost, rabbitmqPort))
 	if err != nil {
 		log.Fatal("rabbitMQ connection error : ", err)
 	}
@@ -126,34 +129,38 @@ func main() {
 	apiv1.Post("/login", userHandler.LoginUser)
 	apiv1.Get("/logout", mw.WithAuthentication(userHandler.LogoutUser))
 
-	apiv1.Get("/courses", forwardRequest("http://localhost:8081"))
-	apiv1.Get("/courses/search", forwardRequest("http://localhost:8081"))
-	apiv1.Get("/courses/paginated", forwardRequest("http://localhost:8081"))
-	apiv1.Get("/courses/:id", forwardRequest("http://localhost:8081"))
-	apiv1.Post("/courses", forwardRequest("http://localhost:8081"))
-	apiv1.Put("/courses/:id", forwardRequest("http://localhost:8081"))
-	apiv1.Delete("/courses/:id", forwardRequest("http://localhost:8081"))
+	backend_rest := os.Getenv("BACKEND_REST")
+	// backend_rest := "http://localhost:8081"
+	apiv1.Get("/courses", forwardRequest(backend_rest))
+	apiv1.Get("/courses/search", forwardRequest(backend_rest))
+	apiv1.Get("/courses/paginated", forwardRequest(backend_rest))
+	apiv1.Get("/courses/:id", forwardRequest(backend_rest))
+	apiv1.Post("/courses", forwardRequest(backend_rest))
+	apiv1.Put("/courses/:id", forwardRequest(backend_rest))
+	apiv1.Delete("/courses/:id", forwardRequest(backend_rest))
 
-	apiv1.Get("/sections", forwardRequest("http://localhost:8081"))
-	apiv1.Get("/sections/courses/:id", forwardRequest("http://localhost:8081"))
-	apiv1.Get("/sections/:id", forwardRequest("http://localhost:8081"))
-	apiv1.Post("/sections", forwardRequest("http://localhost:8081"))
-	apiv1.Put("/sections/:id", forwardRequest("http://localhost:8081"))
-	apiv1.Delete("/sections/:id", forwardRequest("http://localhost:8081"))
+	apiv1.Get("/sections", forwardRequest(backend_rest))
+	apiv1.Get("/sections/courses/:id", forwardRequest(backend_rest))
+	apiv1.Get("/sections/:id", forwardRequest(backend_rest))
+	apiv1.Post("/sections", forwardRequest(backend_rest))
+	apiv1.Put("/sections/:id", forwardRequest(backend_rest))
+	apiv1.Delete("/sections/:id", forwardRequest(backend_rest))
 
 	apiv1.Get("/enrollments/user/:user_id", enrollmentHandler.GetUserEnrollment)
 	apiv1.Get("/enrollments/course/:course_id", enrollmentHandler.GetCourseEnrollment)
 	apiv1.Post("/enrollments", enrollmentHandler.CreateEnrollment)
 	apiv1.Put("/enrollments/:id", enrollmentHandler.EditEnrollment)
 	apiv1.Delete("/enrollments/:id", enrollmentHandler.DeleteEnrollment)
-	apiv1.Delete("/enrollments/summarize/:user_id", enrollmentHandler.SummarizeUserEnrollmentResult)
+	// apiv1.Delete("/enrollments/summarize/:user_id", enrollmentHandler.SummarizeUserEnrollmentResult)
 	apiv1.Post("/enrollments/summarize", enrollmentHandler.SummarizeCourseEnrollmentResult)
 	apiv1.Get("/enrollments/result/user/:user_id", enrollmentHandler.GetUserEnrollmentResult)
 
 	//instructors
-	apiv1.Post("/instructors", forwardRequest("http://localhost:8082"))
-	apiv1.Put("/instructors/:id", forwardRequest("http://localhost:8082"))
-	apiv1.Post("/instructors/contact", forwardRequest("http://localhost:8082"))
+	backend_instructors := os.Getenv("BACKEND_INSTRUCTOR")
+	// backend_instructors := "http://localhost:8082"
+	apiv1.Post("/instructors", forwardRequest(backend_instructors))
+	apiv1.Put("/instructors/:id", forwardRequest(backend_instructors))
+	apiv1.Post("/instructors/contact", forwardRequest(backend_instructors))
 
 	// Start the server
 	log.Fatal(app.Listen(os.Getenv("BACKEND_GATEWAY")))

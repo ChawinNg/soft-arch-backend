@@ -69,7 +69,9 @@ func (h *EnrollmentHandler) WaitForResponse(responseQueue string) ([]byte, error
 
 	// Consume messages from the response queue
 	go func() {
-		conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/", os.Getenv("RABBITMQ_HOST")))
+		rabbitmqHost := os.Getenv("RABBITMQ_HOST")
+    	rabbitmqPort := os.Getenv("RABBITMQ_PORT")
+		conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%s:%s/", rabbitmqHost, rabbitmqPort))
 		if err != nil {
 			log.Printf("Failed to connect to RabbitMQ: %v", err)
 			return
