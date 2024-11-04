@@ -3,6 +3,7 @@ package main
 import (
 	"backend/internal/core/enrollments"
 	"backend/internal/core/sections"
+	"backend/internal/database"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -34,7 +35,7 @@ type NumEnrollmentResponse struct {
 
 func connectRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
 	rabbitmqHost := os.Getenv("RABBITMQ_HOST")
-    rabbitmqPort := os.Getenv("RABBITMQ_PORT")
+	rabbitmqPort := os.Getenv("RABBITMQ_PORT")
 	conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%s:%s/", rabbitmqHost, rabbitmqPort))
 	if err != nil {
 		return nil, nil, err
@@ -77,13 +78,15 @@ func main() {
 	userConn := userService.NewUserServiceClient(grpcConn)
 
 	sqlDSN := os.Getenv("SQL_DB_DSN")
-	// dbSQL, err := sql.Open("mysql", "root:root@tcp(0.0.0.0:3333)/regdealer")
 	dbSQL, err := sql.Open("mysql", sqlDSN)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dbSQL.Close()
+	database.DB = dbSQL
+	database.NewSQL()
+
 	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
 	sectionService := sections.NewSectionService(dbSQL)
 	go func() {
