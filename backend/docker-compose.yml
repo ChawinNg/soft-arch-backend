@@ -67,7 +67,7 @@ services:
       dockerfile: ./cmd/gateway/Dockerfile
     ports:
       - "8080:8080" # Expose the API gateway on port 8080
-    container_name: gateway
+    container_name: api-gateway
     depends_on:
       mysql:
         condition: service_healthy
