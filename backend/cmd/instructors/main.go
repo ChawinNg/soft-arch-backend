@@ -14,8 +14,8 @@ import (
 
 func main() {
 	app3 := fiber.New()
-
-	dbSQL, err := sql.Open("mysql", "root:123456@tcp(localhost:3306)/regdealer")
+	sqlDSN := os.Getenv("SQL_DB_DSN")
+	dbSQL, err := sql.Open("mysql",sqlDSN)
 
 	if err != nil {
 		log.Fatal("mysql connection error : ", err)
@@ -33,7 +33,7 @@ func main() {
 	apiv1.Put("/instructors/:id", instructorHandler.UpdateInstructor)
 	apiv1.Post("/instructors/contact", instructorHandler.SendEmail)
 
-	log.Fatal(app3.Listen(os.Getenv("http://localhost:8082")))
+	log.Fatal(app3.Listen(os.Getenv("BACKEND_INSTRUCTOR")))
 }
 
 func helloHandler(c *fiber.Ctx) error {

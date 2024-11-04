@@ -3,6 +3,7 @@ package main
 import (
 	"backend/internal/core/enrollments"
 	"backend/internal/core/sections"
+	"backend/internal/database"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -33,7 +34,9 @@ type NumEnrollmentResponse struct {
 }
 
 func connectRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
-	conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%v/", os.Getenv("RABBITMQ_HOST")))
+	rabbitmqHost := os.Getenv("RABBITMQ_HOST")
+	rabbitmqPort := os.Getenv("RABBITMQ_PORT")
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%s:%s/", rabbitmqHost, rabbitmqPort))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,7 +50,7 @@ func connectRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
 func main() {
 	conn, ch, err := connectRabbitMQ()
 	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
+		log.Fatalf("Receiever failed to connect to RabbitMQ: %s", err)
 	}
 	defer conn.Close()
 	defer ch.Close()
@@ -74,13 +77,16 @@ func main() {
 	}
 	userConn := userService.NewUserServiceClient(grpcConn)
 
-	// sqlDSN := os.Getenv("SQL_DB_DSN")
-	dbSQL, err := sql.Open("mysql", "root:root@tcp(0.0.0.0:3333)/regdealer")
+	sqlDSN := os.Getenv("SQL_DB_DSN")
+	dbSQL, err := sql.Open("mysql", sqlDSN)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dbSQL.Close()
+	database.DB = dbSQL
+	database.NewSQL()
+
 	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
 	sectionService := sections.NewSectionService(dbSQL)
 	go func() {
@@ -99,7 +105,7 @@ func main() {
 				if err != nil {
 					response = EnrollmentResponse{
 						Status:  "error",
-						Message: "Error fetching enrollments",
+						Message: "Error fetching enrollments from receive",
 						Data:    nil,
 					}
 				} else {
@@ -110,7 +116,7 @@ func main() {
 					}
 				}
 				if err != nil {
-					log.Printf("Error fetching enrollments for user %s: %v", action.UserID, err)
+					log.Printf("Error fetching enrollments from receive for user %s: %v", action.UserID, err)
 				} else if len(enrollments) == 0 {
 					log.Printf("No enrollments found for user %s", action.UserID)
 				} else {
@@ -145,9 +151,9 @@ func main() {
 					}
 				} else {
 					response = EnrollmentResponse{
-						Status:  "success",
-						Message: "Enrollment results retrieved successfully",
-						SummaryData:    enrollments,
+						Status:      "success",
+						Message:     "Enrollment results retrieved successfully",
+						SummaryData: enrollments,
 					}
 				}
 				if err != nil {
@@ -181,7 +187,7 @@ func main() {
 				if err != nil {
 					response = EnrollmentResponse{
 						Status:  "error",
-						Message: "Error fetching enrollments",
+						Message: "Error fetching enrollments from receive",
 						Data:    nil,
 					}
 				} else {
@@ -192,7 +198,7 @@ func main() {
 					}
 				}
 				if err != nil {
-					log.Printf("Error fetching enrollments for course %s: %v", action.CourseID, err)
+					log.Printf("Error fetching enrollments from receive for course %s: %v", action.CourseID, err)
 				} else if len(enrollments) == 0 {
 					log.Printf("No enrollments found for course %s", action.CourseID)
 				} else {
@@ -349,7 +355,7 @@ func main() {
 				}
 				userConn.ReduceUserPoint(context.Background(), &userService.ReduceUserPointRequest{
 					Id:          action.UserID,
-					ReducePoint: points,
+					ReducePoint: int32(points),
 				})
 				log.Printf("Summarize user with user ID %s successfully. Reduced %v points", action.UserID, points)
 				var response NumEnrollmentResponse
@@ -414,9 +420,9 @@ func main() {
 				}
 				if response.Message == "" {
 					response = EnrollmentResponse{
-						Status:  "success",
-						Message: "Enrollments summarized successfully",
-						SummaryData:  enrollmentSummary,
+						Status:      "success",
+						Message:     "Enrollments summarized successfully",
+						SummaryData: enrollmentSummary,
 					}
 				}
 				//marshal

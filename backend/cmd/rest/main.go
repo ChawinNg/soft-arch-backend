@@ -15,8 +15,8 @@ import (
 
 func main() {
 	app2 := fiber.New()
-
-	dbSQL, err := sql.Open("mysql", "root:123456@tcp(localhost:3306)/regdealer")
+	sqlDSN := os.Getenv("SQL_DB_DSN")
+	dbSQL, err := sql.Open("mysql", sqlDSN)
 
 	if err != nil {
 		log.Fatal("mysql connection error : ", err)

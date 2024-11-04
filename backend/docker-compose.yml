@@ -3,6 +3,7 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -26,9 +27,39 @@ services:
       dockerfile: ./cmd/users/Dockerfile
     ports:
       - "${GRPC_SERVER_PORT}:9000" # Expose the gRPC server on port 9000
-    container_name: grpc-server-container
+    container_name: grpc-server
     networks:
       - masato
+  
+  rest-server:
+    build: 
+      context: .
+      dockerfile: ./cmd/rest/Dockerfile
+    ports:
+      - "${BACKEND_REST_PORT}:8081" 
+    container_name: rest-server
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      masato:
+        aliases:
+          - backend # Adds "backend" as an alias for rest-server
+
+  instructors-server:
+    build: 
+      context: .
+      dockerfile: ./cmd/instructors/Dockerfile
+    ports:
+      - "${BACKEND_INSTRUCTOR_PORT}:8082" 
+    container_name: instructors-server
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      masato:
+        aliases:
+          - instructors # Adds "instructors" as an alias for this service
 
   api-gateway:
     build: 
@@ -36,14 +67,12 @@ services:
       dockerfile: ./cmd/gateway/Dockerfile
     ports:
       - "8080:8080" # Expose the API gateway on port 8080
-    container_name: gateway-container
+    container_name: gateway
     depends_on:
       mysql:
         condition: service_healthy
-      grpc-server:
-        condition: service_started
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     environment:
       - GRPC_SERVER_HOST=grpc-server:9000
     networks:
@@ -51,17 +80,38 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.11-management-alpine
+    container_name: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: root
       RABBITMQ_DEFAULT_PASS: root
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - masato
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./cmd/rabbitmq/receive/Dockerfile
+    container_name: worker
+    environment:
+    - RABBITMQ_HOST=rabbitmq
+    - RABBITMQ_PORT=5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
     networks:
       - masato
 
 volumes:
-  mongo_volume:
   mysql_volume:
 
 networks:
