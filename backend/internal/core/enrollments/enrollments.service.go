@@ -58,7 +58,7 @@ func (e *EnrollmentService) GetUserEnrollmentResult(user_id string) ([]Enrollmen
 	for rows.Next() {
 		var enrollment EnrollmentSummary
 		if err := rows.Scan(&enrollment.UserID, &enrollment.CourseID, &enrollment.CourseName, &enrollment.CourseCredit,
-			 &enrollment.SectionID, &enrollment.Section,
+			&enrollment.SectionID, &enrollment.Section,
 			&enrollment.Round, &enrollment.Points, &enrollment.Result); err != nil {
 			log.Println("Error scanning Enrollment results:", err)
 			return nil, err
@@ -281,6 +281,9 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 
 		availableCapacity--
 
+	}
+	if len(enrollments) == 0 {
+		return enrollments, nil, nil
 	}
 
 	lastEnrollment := enrollments[len(enrollments)-1]
