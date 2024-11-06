@@ -417,10 +417,18 @@ func main() {
 					}
 					//update user points
 					for _,enrollSum := range(enrollmentSummary){
-						userConn.ReduceUserPoint(context.Background(), &userService.ReduceUserPointRequest{
+						_, err := userConn.ReduceUserPoint(context.Background(), &userService.ReduceUserPointRequest{
 							Id:          enrollSum.UserID,
 							ReducePoint: int32(enrollSum.Points),
 						})
+						if err != nil {
+							log.Printf("Error ReduceUserPoint : %v", err)
+							response = EnrollmentResponse{
+								Status:  "error",
+								Message: "Error ReduceUserPoint",
+							}
+							break
+						}
 						log.Printf("Summarize user with user ID %s successfully. Reduced %v points", enrollSum.UserID, enrollSum.Points)
 					}
 				
