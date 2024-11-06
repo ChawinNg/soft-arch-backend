@@ -141,8 +141,8 @@ func (e *EnrollmentService) DeleteEnrollment(id string) error {
 	return nil
 }
 
-func (e *EnrollmentService) SummarizePoints(user_id string) (int64, error) {
-	var totalPoints int64
+func (e *EnrollmentService) SummarizePoints(user_id string) (int32, error) {
+	var totalPoints int32
 
 	err := e.db.QueryRow(`
         SELECT COALESCE(SUM(points), 0) 

@@ -338,7 +338,7 @@ func main() {
 					log.Printf("Error publishing response: %v", err)
 				}
 			} else if action.Action == "summarize user enrollment" {
-				var points int64
+				var points int32
 				enrollments, err := enrollmentService.GetUserEnrollment(action.UserID)
 				if err != nil {
 					log.Printf("Error getting user enrollment with user id %s: %v", action.UserID, err)
@@ -353,6 +353,7 @@ func main() {
 						log.Printf("Error deleting enrollment with ID %s: %v", enrollment.EnrollmentID, err)
 					}
 				}
+
 				userConn.ReduceUserPoint(context.Background(), &userService.ReduceUserPointRequest{
 					Id:          action.UserID,
 					ReducePoint: int32(points),
@@ -368,7 +369,7 @@ func main() {
 					response = NumEnrollmentResponse{
 						Status:  "success",
 						Message: "User enrollments summarized successfully",
-						Data:    points,
+						Data:    int64(points),
 					}
 				}
 				responseBody, err := json.Marshal(response)

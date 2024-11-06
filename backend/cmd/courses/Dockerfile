@@ -12,10 +12,10 @@ RUN go mod download
 COPY . .
 
 # Build the API gateway
-RUN go build -o rest ./cmd/rest/main.go
+RUN go build -o courses ./cmd/courses/main.go
 
 # Expose the HTTP port
 EXPOSE 8081
 
 # Run the API rest
-CMD ["./rest"]
+CMD ["./courses"]
