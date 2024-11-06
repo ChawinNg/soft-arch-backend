@@ -83,8 +83,8 @@ services:
     image: rabbitmq:3.11-management-alpine
     container_name: rabbitmq-broker
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: root
+      RABBITMQ_DEFAULT_PASS: root
     ports:
       - "5672:5672"
       - "15672:15672"
