@@ -402,7 +402,7 @@ func main() {
 						Status:  "error",
 						Message: "Error SummarizeCourseEnrollmentResult",
 					}
-				} else if len(enrollmentSummary)!=0 {
+				} else if len(enrollmentSummary) != 0 {
 					//update section
 					for _, newSectionData := range newSectionDatas {
 						err = sectionService.UpdateSection(newSectionData)
@@ -416,22 +416,25 @@ func main() {
 						}
 					}
 					//update user points
-					for _,enrollSum := range(enrollmentSummary){
-						_, err := userConn.ReduceUserPoint(context.Background(), &userService.ReduceUserPointRequest{
-							Id:          enrollSum.UserID,
-							ReducePoint: int32(enrollSum.Points),
-						})
-						if err != nil {
-							log.Printf("Error ReduceUserPoint : %v", err)
-							response = EnrollmentResponse{
-								Status:  "error",
-								Message: "Error ReduceUserPoint",
+					for _, enrollSum := range enrollmentSummary {
+						if enrollSum.Result == true {
+							_, err := userConn.ReduceUserPoint(context.Background(), &userService.ReduceUserPointRequest{
+								Id:          enrollSum.UserID,
+								ReducePoint: int32(enrollSum.Points),
+							})
+							if err != nil {
+								log.Printf("Error ReduceUserPoint : %v", err)
+								response = EnrollmentResponse{
+									Status:  "error",
+									Message: "Error ReduceUserPoint",
+								}
+								break
 							}
-							break
+							log.Printf("Summarize user with user ID %s successfully. Reduced %v points", enrollSum.UserID, enrollSum.Points)
 						}
-						log.Printf("Summarize user with user ID %s successfully. Reduced %v points", enrollSum.UserID, enrollSum.Points)
+
 					}
-				
+
 				}
 				if response.Message == "" {
 					response = EnrollmentResponse{
