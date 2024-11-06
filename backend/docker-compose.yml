@@ -34,7 +34,7 @@ services:
   rest-server:
     build: 
       context: .
-      dockerfile: ./cmd/rest/Dockerfile
+      dockerfile: ./cmd/courses/Dockerfile
     ports:
       - "${BACKEND_REST_PORT}:8081" 
     container_name: rest-server
@@ -74,7 +74,8 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
-      - GRPC_SERVER_HOST=grpc-server:9000
+      - GRPC_SERVER_HOST = grpc-server:9000
+      - SQL_DB_DSN = root:123456@tcp(mysql:3306)/regdealer
     networks:
       - masato
 
