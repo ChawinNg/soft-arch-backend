@@ -287,9 +287,10 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 	}
 
 	lastEnrollment := enrollments[len(enrollments)-1]
-	lastSectionToUpdate := SectionToUpdates[len(SectionToUpdates)-1]
-
-	if (lastEnrollment.CourseID != lastSectionToUpdate.CourseID) || (lastEnrollment.Section != lastSectionToUpdate.Section) {
+	if len(SectionToUpdates)==0{
+		if availableCapacity < 0 {
+			availableCapacity = 0
+		}
 		var SectionToUpdate sections.Section
 		SectionToUpdate.CourseID = prevCourseID
 		SectionToUpdate.Section = prevSection
@@ -297,6 +298,17 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 		SectionToUpdate.Capacity = prevMaxCapa - availableCapacity
 		SectionToUpdate.SectionID = prevSectionID
 		SectionToUpdates = append(SectionToUpdates, SectionToUpdate)
+	} else {
+		lastSectionToUpdate := SectionToUpdates[len(SectionToUpdates)-1]
+		if (lastEnrollment.CourseID != lastSectionToUpdate.CourseID) || (lastEnrollment.Section != lastSectionToUpdate.Section) {
+			var SectionToUpdate sections.Section
+			SectionToUpdate.CourseID = prevCourseID
+			SectionToUpdate.Section = prevSection
+			SectionToUpdate.MaxCapacity = prevMaxCapa
+			SectionToUpdate.Capacity = prevMaxCapa - availableCapacity
+			SectionToUpdate.SectionID = prevSectionID
+			SectionToUpdates = append(SectionToUpdates, SectionToUpdate)
+		}
 	}
 
 	if err = rows.Err(); err != nil {
