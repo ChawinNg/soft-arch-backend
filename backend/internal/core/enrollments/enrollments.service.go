@@ -98,7 +98,19 @@ func (e *EnrollmentService) GetCourseEnrollment(course_id string) ([]Enrollment,
 func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) (int64, error) {
 	var courseName string
 	var courseCredit int
-	err := e.db.QueryRow("SELECT course_name, credit FROM courses WHERE id = ?", enrollment.CourseID).Scan(&courseName, &courseCredit)
+
+	var existingID int64
+	err := e.db.QueryRow("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND section_id = ?",
+		enrollment.UserID, enrollment.CourseID, enrollment.SectionID).Scan(&existingID)
+	if err == nil {
+		log.Println("enrollment already exists for this user, course, and section")
+		return 0, err
+	} else if err != sql.ErrNoRows {
+		log.Println("Error checking existing enrollment:", err)
+		return 0, err
+	}
+
+	err = e.db.QueryRow("SELECT course_name, credit FROM courses WHERE id = ?", enrollment.CourseID).Scan(&courseName, &courseCredit)
 	if err != nil {
 		log.Println("Error fetching course info:", err)
 		return 0, err
@@ -287,7 +299,7 @@ func (s *EnrollmentService) SummarizeCourseEnrollmentResult(round string) ([]Enr
 	}
 
 	lastEnrollment := enrollments[len(enrollments)-1]
-	if len(SectionToUpdates)==0{
+	if len(SectionToUpdates) == 0 {
 		if availableCapacity < 0 {
 			availableCapacity = 0
 		}
