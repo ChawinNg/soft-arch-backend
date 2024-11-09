@@ -3,13 +3,12 @@ package main
 import (
 	"bytes"
 	"database/sql"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
-	"backend/internal/core/enrollments"
 	user "backend/internal/core/users/rest"
 	"backend/internal/database"
 	userService "backend/internal/genproto/users"
@@ -19,7 +18,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -53,44 +51,44 @@ func main() {
 	database.DB = dbSQL
 	database.NewSQL()
 	// Connect to rabbitmq
-	rabbitmqHost := os.Getenv("RABBITMQ_HOST")
-    rabbitmqPort := os.Getenv("RABBITMQ_PORT")
+	// rabbitmqHost := os.Getenv("RABBITMQ_HOST")
+    // rabbitmqPort := os.Getenv("RABBITMQ_PORT")
 
-	rabbitMQConn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%s:%s/", rabbitmqHost, rabbitmqPort))
-	if err != nil {
-		log.Fatal("rabbitMQ connection error : ", err)
-	}
-	defer rabbitMQConn.Close()
+	// rabbitMQConn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%s:%s/", rabbitmqHost, rabbitmqPort))
+	// if err != nil {
+	// 	log.Fatal("rabbitMQ connection error : ", err)
+	// }
+	// defer rabbitMQConn.Close()
 
-	ch, err := rabbitMQConn.Channel()
-	if err != nil {
-		log.Fatal("rabbitMQ channel error : ", err)
-	}
-	defer ch.Close()
+	// ch, err := rabbitMQConn.Channel()
+	// if err != nil {
+	// 	log.Fatal("rabbitMQ channel error : ", err)
+	// }
+	// defer ch.Close()
 
-	_, err = ch.QueueDeclare(
-		"enrollment_queue", // queue name
-		true,               // durable
-		false,              // delete when unused
-		false,              // exclusive
-		false,              // no-wait
-		nil,                // arguments
-	)
-	if err != nil {
-		log.Fatal("rabbitMQ declare enrollment_queue error : ", err)
-	}
+	// _, err = ch.QueueDeclare(
+	// 	"enrollment_queue", // queue name
+	// 	true,               // durable
+	// 	false,              // delete when unused
+	// 	false,              // exclusive
+	// 	false,              // no-wait
+	// 	nil,                // arguments
+	// )
+	// if err != nil {
+	// 	log.Fatal("rabbitMQ declare enrollment_queue error : ", err)
+	// }
 
-	_, err = ch.QueueDeclare(
-		"response_queue", // queue name
-		true,             // durable
-		false,            // delete when unused
-		false,            // exclusive
-		false,            // no-wait
-		nil,              // arguments
-	)
-	if err != nil {
-		log.Fatal("rabbitMQ declare response_queue error : ", err)
-	}
+	// _, err = ch.QueueDeclare(
+	// 	"response_queue", // queue name
+	// 	true,             // durable
+	// 	false,            // delete when unused
+	// 	false,            // exclusive
+	// 	false,            // no-wait
+	// 	nil,              // arguments
+	// )
+	// if err != nil {
+	// 	log.Fatal("rabbitMQ declare response_queue error : ", err)
+	// }
 
 	//Define Handlers & Services
 	userConn := userService.NewUserServiceClient(conn)
@@ -102,8 +100,8 @@ func main() {
 	// courseService := courses.NewCourseService(dbSQL)
 	// courseHandler := courses.NewCourseHandler(courseService, sectionService)
 
-	enrollmentService := enrollments.NewEnrollmentService(dbSQL)
-	enrollmentHandler := enrollments.NewEnrollmentHandler(enrollmentService, userConn, ch)
+	// enrollmentService := enrollments.NewEnrollmentService(dbSQL)
+	// enrollmentHandler := enrollments.NewEnrollmentHandler(enrollmentService, userConn, ch)
 
 	// instructorService := instructors.NewInstructorService(dbSQL)
 	// instructorHandler := instructors.NewInstructorHandler(instructorService)
@@ -145,14 +143,14 @@ func main() {
 	apiv1.Put("/sections/:id", forwardRequest(backend_rest_service_url))
 	apiv1.Delete("/sections/:id", forwardRequest(backend_rest_service_url))
 
-	apiv1.Get("/enrollments/user/:user_id", enrollmentHandler.GetUserEnrollment)
-	apiv1.Get("/enrollments/course/:course_id", enrollmentHandler.GetCourseEnrollment)
-	apiv1.Post("/enrollments", enrollmentHandler.CreateEnrollment)
-	apiv1.Put("/enrollments/:id", enrollmentHandler.EditEnrollment)
-	apiv1.Delete("/enrollments/:id", enrollmentHandler.DeleteEnrollment)
-	// apiv1.Delete("/enrollments/summarize/:user_id", enrollmentHandler.SummarizeUserEnrollmentResult)
-	apiv1.Post("/enrollments/summarize", enrollmentHandler.SummarizeCourseEnrollmentResult)
-	apiv1.Get("/enrollments/result/user/:user_id", enrollmentHandler.GetUserEnrollmentResult)
+	// apiv1.Get("/enrollments/user/:user_id", enrollmentHandler.GetUserEnrollment)
+	// apiv1.Get("/enrollments/course/:course_id", enrollmentHandler.GetCourseEnrollment)
+	// apiv1.Post("/enrollments", enrollmentHandler.CreateEnrollment)
+	// apiv1.Put("/enrollments/:id", enrollmentHandler.EditEnrollment)
+	// apiv1.Delete("/enrollments/:id", enrollmentHandler.DeleteEnrollment)
+	// // apiv1.Delete("/enrollments/summarize/:user_id", enrollmentHandler.SummarizeUserEnrollmentResult)
+	// apiv1.Post("/enrollments/summarize", enrollmentHandler.SummarizeCourseEnrollmentResult)
+	// apiv1.Get("/enrollments/result/user/:user_id", enrollmentHandler.GetUserEnrollmentResult)
 
 	//instructors
 	backend_instructors_service_url := os.Getenv("INSTRUCTOR_SERVICE_URL")
@@ -167,12 +165,27 @@ func main() {
 func forwardRequest(targetURL string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		reqBody := bytes.NewReader(c.Body())
+
+		// Get the query parameters from the original request
+		queryParams := c.Queries()
+
+		// Append query parameters to the target URL if any are present
+		targetWithQuery := targetURL + c.Path()
+		if len(queryParams) > 0 {
+			query := url.Values{}
+			for key, value := range queryParams {
+				query.Add(key, value)
+			}
+			targetWithQuery += "?" + query.Encode()
+		}
+
 		// Create a new HTTP request to forward
-		req, err := http.NewRequest(c.Method(), targetURL+c.Path(), reqBody)
+		req, err := http.NewRequest(c.Method(), targetWithQuery, reqBody)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 
+		// Copy request headers
 		for k, values := range c.GetReqHeaders() {
 			for _, v := range values {
 				req.Header.Add(k, v)
@@ -201,3 +214,6 @@ func forwardRequest(targetURL string) fiber.Handler {
 		return c.Send(body)
 	}
 }
+
+
+
