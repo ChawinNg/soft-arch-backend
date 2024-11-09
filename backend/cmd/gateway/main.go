@@ -55,7 +55,7 @@ func main() {
 	database.NewSQL()
 	// Connect to rabbitmq
 	rabbitmqHost := os.Getenv("RABBITMQ_HOST")
-    rabbitmqPort := os.Getenv("RABBITMQ_PORT")
+	rabbitmqPort := os.Getenv("RABBITMQ_PORT")
 
 	rabbitMQConn, err := amqp.Dial(fmt.Sprintf("amqp://root:root@%s:%s/", rabbitmqHost, rabbitmqPort))
 	if err != nil {
@@ -98,7 +98,7 @@ func main() {
 	userHandler := user.NewHandler(userConn)
 
 	// sectionService := sections.NewSectionService(dbSQL)
-	// sectionHandler := sections.NewSectionHandler(sectionService)
+	// // sectionHandler := sections.NewSectionHandler(sectionService)
 
 	// courseService := courses.NewCourseService(dbSQL)
 	// courseHandler := courses.NewCourseHandler(courseService, sectionService)
@@ -131,10 +131,11 @@ func main() {
 	apiv1.Get("/logout", mw.WithAuthentication(userHandler.LogoutUser))
 
 	backend_rest_service_url := os.Getenv("REST_SERVICE_URL")
-	apiv1.Get("/courses", forwardRequest(backend_rest_service_url))
-	apiv1.Get("/courses/search", forwardRequest(backend_rest_service_url))
+	// apiv1.Get("/courses/paginated", courseHandler.GetCoursesPaginated)
 	apiv1.Get("/courses/paginated", forwardRequest(backend_rest_service_url))
+	apiv1.Get("/courses/search", forwardRequest(backend_rest_service_url))
 	apiv1.Get("/courses/:id", forwardRequest(backend_rest_service_url))
+	apiv1.Get("/courses", forwardRequest(backend_rest_service_url))
 	apiv1.Post("/courses", forwardRequest(backend_rest_service_url))
 	apiv1.Put("/courses/:id", forwardRequest(backend_rest_service_url))
 	apiv1.Delete("/courses/:id", forwardRequest(backend_rest_service_url))

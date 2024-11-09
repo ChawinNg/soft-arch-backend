@@ -21,7 +21,7 @@ func (e *EnrollmentService) GetUserEnrollment(user_id string) ([]Enrollment, err
     SELECT e.id, e.user_id, e.course_id, c.course_name, c.credit, e.section_id, e.section, e.points, e.round
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
-    WHERE e.user_id = ?`, user_id)
+    WHERE e.user_id = ? AND e.summarized = FALSE`, user_id)
 	if err != nil {
 		log.Println("Error fetching Enrollments:", err)
 		return nil, err
@@ -100,7 +100,7 @@ func (e *EnrollmentService) CreateEnrollment(enrollment Enrollment) (int64, erro
 	var courseCredit int
 
 	var existingID int64
-	err := e.db.QueryRow("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND section_id = ?",
+	err := e.db.QueryRow("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND section_id = ? AND summarized = FALSE",
 		enrollment.UserID, enrollment.CourseID, enrollment.SectionID).Scan(&existingID)
 	if err == nil {
 		log.Println("enrollment already exists for this user, course, and section")

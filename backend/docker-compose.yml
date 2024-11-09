@@ -96,11 +96,27 @@ services:
     networks:
       - masato
 
-  enrollments-service:
+  enrollments-service-1:
     build:
       context: .
       dockerfile: ./cmd/rabbitmq/receive/Dockerfile
-    container_name: enrollments-service
+    container_name: enrollments-service-1
+    environment:
+    - RABBITMQ_HOST=rabbitmq-broker
+    - RABBITMQ_PORT=5672
+    - GRPC_SERVER_HOST=users-services:9000
+    depends_on:
+      api-gateway:
+        condition: service_started
+      
+    networks:
+      - masato
+  
+  enrollments-service-2:
+    build:
+      context: .
+      dockerfile: ./cmd/rabbitmq/receive/Dockerfile
+    container_name: enrollments-service-2
     environment:
     - RABBITMQ_HOST=rabbitmq-broker
     - RABBITMQ_PORT=5672
